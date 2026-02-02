@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: menu-service
+  profiles:
+    active: local-dev
