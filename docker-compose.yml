@@ -20,23 +20,6 @@ services:
     networks:
       - restaurant-network
 
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: restaurant-redis
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - restaurant-network
-
   # Zookeeper (Required for Kafka)
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -78,10 +61,114 @@ services:
     networks:
       - restaurant-network
 
+  # Eureka Service Discovery
+  eureka-server:
+    build: ./eureka-server
+    container_name: restaurant-eureka
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: local-dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - restaurant-network
+
+  # API Gateway
+  api-gateway:
+    build: ./api-gateway
+    container_name: restaurant-api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+    environment:
+      SPRING_PROFILES_ACTIVE: local-dev
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - restaurant-network
+
+  # Order Service
+  order-service:
+    build: ./order-service
+    container_name: restaurant-order-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres
+      - kafka
+      - eureka-server
+    environment:
+      SPRING_PROFILES_ACTIVE: local-dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/restaurant_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - restaurant-network
+
+  # Kitchen Service
+  kitchen-service:
+    build: ./kitchen-service
+    container_name: restaurant-kitchen-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - postgres
+      - kafka
+      - eureka-server
+    environment:
+      SPRING_PROFILES_ACTIVE: local-dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/restaurant_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - restaurant-network
+
+  # Notification Service
+  notification-service:
+    build: ./notification-service
+    container_name: restaurant-notification-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - kafka
+      - eureka-server
+    environment:
+      SPRING_PROFILES_ACTIVE: local-dev
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-server:8761/eureka
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - restaurant-network
+
 volumes:
   postgres_data:
-    driver: local
-  redis_data:
     driver: local
 
 networks:
