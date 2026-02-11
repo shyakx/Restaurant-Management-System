@@ -2,6 +2,7 @@ package com.restaurant.order.entity
 
 import jakarta.persistence.*
 import java.math.BigDecimal
+import com.fasterxml.jackson.annotation.JsonBackReference
 
 @Entity
 @Table(name = "order_items")
@@ -12,6 +13,7 @@ data class OrderItem(
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
+    @JsonBackReference
     var order: Order,
     
     @Column(nullable = false)

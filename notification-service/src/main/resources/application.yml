@@ -15,11 +15,11 @@ spring:
         spring.json.trusted.packages: "*"
         spring.json.value.default.type: com.restaurant.notification.dto.OrderEvent
   
-  # Email Configuration (for real notifications)
+  # Email Configuration (for testing with Mailtrap)
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${EMAIL_USERNAME:shyakasteven2023@gmail.com}
+    host: sandbox.smtp.mailtrap.io
+    port: 2525
+    username: ${EMAIL_USERNAME:s.shyaka1@alustudent.com}
     password: ${EMAIL_PASSWORD:0782194138@Steve}
     properties:
       mail:
@@ -47,6 +47,9 @@ management:
   endpoint:
     health:
       show-details: always
+  health:
+    mail:
+      enabled: false
 
 # Logging
 logging:

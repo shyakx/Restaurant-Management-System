@@ -3,6 +3,7 @@ package com.restaurant.order.entity
 import jakarta.persistence.*
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import com.fasterxml.jackson.annotation.JsonManagedReference
 
 @Entity
 @Table(name = "orders")
@@ -28,6 +29,7 @@ data class Order(
     val totalAmount: BigDecimal,
     
     @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    @JsonManagedReference
     var items: List<OrderItem> = emptyList(),
     
     @Column(nullable = false)
