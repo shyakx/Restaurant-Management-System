@@ -12,39 +12,48 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
+/**
+ * Order Controller - REST API for order management.
+ */
 @RestController
 @RequestMapping("/api/orders")
 class OrderController(private val orderService: OrderService) {
 
+    // Create new order
     @PostMapping
     fun createOrder(@Valid @RequestBody request: CreateOrderRequest): ResponseEntity<OrderResponse> {
         val order = orderService.createOrder(request)
         return ResponseEntity.status(HttpStatus.CREATED).body(order.toResponse())
     }
 
+    // Get order by ID
     @GetMapping("/{id}")
     fun getOrderById(@PathVariable id: Long): ResponseEntity<OrderResponse> {
         val order = orderService.getOrderById(id)
         return ResponseEntity.ok(order.toResponse())
     }
 
+    // Get all orders
     @GetMapping
     fun getAllOrders(): ResponseEntity<List<OrderResponse>> {
         val orders = orderService.getAllOrders()
         return ResponseEntity.ok(orders.map { it.toResponse() })
     }
 
+    // Get orders by status
     @GetMapping("/status/{status}")
     fun getOrdersByStatus(@PathVariable status: OrderStatus): ResponseEntity<List<OrderResponse>> {
         val orders = orderService.getOrdersByStatus(status)
         return ResponseEntity.ok(orders.map { it.toResponse() })
     }
 
+    // Update order status
     @PutMapping("/{id}/status")
     fun updateOrderStatus(
         @PathVariable id: Long,
         @Valid @RequestBody statusRequest: UpdateOrderStatusRequest
     ): ResponseEntity<OrderResponse> {
+        // Parse status with fallback to PENDING for invalid values
         val status = try {
             OrderStatus.valueOf(statusRequest.status.uppercase())
         } catch (e: IllegalArgumentException) {
@@ -54,12 +63,14 @@ class OrderController(private val orderService: OrderService) {
         return ResponseEntity.ok(order.toResponse())
     }
 
+    // Get customer orders by email
     @GetMapping("/customer/{email}")
     fun getOrdersByCustomerEmail(@PathVariable email: String): ResponseEntity<List<OrderResponse>> {
         val orders = orderService.getOrdersByCustomerEmail(email)
         return ResponseEntity.ok(orders.map { it.toResponse() })
     }
 
+    // Get order statistics
     @GetMapping("/statistics")
     fun getOrderStatistics(): ResponseEntity<Map<String, Long>> {
         val statistics = orderService.getOrderStatistics()
@@ -67,7 +78,9 @@ class OrderController(private val orderService: OrderService) {
     }
 }
 
-// Extension functions for mapping
+// Extension functions for entity-to-DTO mapping
+
+// Convert Order entity to OrderResponse DTO
 fun Order.toResponse(): OrderResponse {
     return OrderResponse(
         id = this.id!!,
@@ -82,6 +95,7 @@ fun Order.toResponse(): OrderResponse {
     )
 }
 
+// Convert OrderItem entity to OrderItemResponse DTO
 fun com.restaurant.order.entity.OrderItem.toResponse(): OrderItemResponse {
     return OrderItemResponse(
         id = this.id!!,

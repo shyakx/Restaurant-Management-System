@@ -8,10 +8,14 @@ import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
+/**
+ * Handles email notifications for order events.
+ */
 @Service
 @Transactional
 class NotificationService(private val mailSender: JavaMailSender) {
 
+    // Process order events from Kafka
     @KafkaListener(topics = ["order-events"], groupId = "notification-service-group")
     fun handleOrderEvent(orderEvent: OrderEvent) {
         when (orderEvent.eventType) {
@@ -24,6 +28,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
         }
     }
 
+    // Send order confirmation email
     private fun sendOrderConfirmation(orderEvent: OrderEvent) {
         val subject = "Order Confirmation - #${orderEvent.orderId}"
         val message = buildOrderMessage(orderEvent, """
@@ -49,6 +54,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
         println("Order confirmation sent to ${orderEvent.customerEmail} for order #${orderEvent.orderId}")
     }
 
+    // Send order confirmed notification
     private fun sendOrderConfirmedNotification(orderEvent: OrderEvent) {
         val subject = "Order Confirmed - #${orderEvent.orderId}"
         val message = buildOrderMessage(orderEvent, """
@@ -67,6 +73,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
         sendEmail(orderEvent.customerEmail, subject, message)
     }
 
+    // Send order preparing notification
     private fun sendOrderPreparingNotification(orderEvent: OrderEvent) {
         val subject = "Order in Preparation - #${orderEvent.orderId}"
         val message = buildOrderMessage(orderEvent, """
@@ -86,6 +93,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
         sendEmail(orderEvent.customerEmail, subject, message)
     }
 
+    // Send order ready notification
     private fun sendOrderReadyNotification(orderEvent: OrderEvent) {
         val subject = "Order Ready for Pickup - #${orderEvent.orderId}"
         val message = buildOrderMessage(orderEvent, """
@@ -105,6 +113,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
         sendEmail(orderEvent.customerEmail, subject, message)
     }
 
+    // Send order completed notification
     private fun sendOrderCompletedNotification(orderEvent: OrderEvent) {
         val subject = "Order Completed - #${orderEvent.orderId}"
         val message = buildOrderMessage(orderEvent, """
@@ -124,6 +133,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
         sendEmail(orderEvent.customerEmail, subject, message)
     }
 
+    // Send order cancelled notification
     private fun sendOrderCancelledNotification(orderEvent: OrderEvent) {
         val subject = "Order Cancelled - #${orderEvent.orderId}"
         val message = buildOrderMessage(orderEvent, """
@@ -142,6 +152,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
         sendEmail(orderEvent.customerEmail, subject, message)
     }
 
+    // Send email using JavaMailSender
     private fun sendEmail(to: String, subject: String, text: String) {
         try {
             val message = SimpleMailMessage()
@@ -149,16 +160,18 @@ class NotificationService(private val mailSender: JavaMailSender) {
             message.subject = subject
             message.text = text
             mailSender.send(message)
+            // Log email delivery success
             println("Email sent successfully to $to with subject: $subject")
         } catch (e: Exception) {
+            // Log email delivery failure
             println("Failed to send email to $to: ${e.message}")
-            // In production, you might want to log this error and potentially retry
+            // TODO: Add retry mechanism for failed emails
         }
     }
 
+    // Build formatted email message
     private fun buildOrderMessage(orderEvent: OrderEvent, defaultMessage: String): String {
-        // For demo purposes, we'll simulate sending notifications
-        // In production, this would send actual emails
+        // Log notification details for debugging
         println("=== NOTIFICATION ===")
         println("To: ${orderEvent.customerEmail}")
         println("Event: ${orderEvent.eventType}")

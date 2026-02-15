@@ -1,11 +1,10 @@
 # Restaurant Management System
 
-A modern microservices restaurant management system using Spring Boot, Eureka, API Gateway, Kafka, and PostgreSQL.
+A modern microservices restaurant management system using Spring Boot, Eureka, Kafka, and PostgreSQL.
 
 ## Architecture
 
 - **Eureka Server**: Service discovery and registration (port 8761)
-- **API Gateway**: Single entry point for all requests (port 8081)
 - **Order Service**: Handles customer orders and publishes events (port 8082)
 - **Kitchen Service**: Manages food preparation and consumes order events (port 8083)
 - **Notification Service**: Sends email notifications for order events (port 8084)
@@ -19,7 +18,6 @@ A modern microservices restaurant management system using Spring Boot, Eureka, A
 3. Kitchen Service consumes events and starts food preparation
 4. Kitchen Service publishes ORDER_READY events to Kafka
 5. Notification Service consumes all order events and sends emails
-6. API Gateway routes all external requests to appropriate services
 
 ## Technologies
 
@@ -28,46 +26,207 @@ A modern microservices restaurant management system using Spring Boot, Eureka, A
 - PostgreSQL Database
 - Apache Kafka
 - Docker & Docker Compose
-- Spring Cloud Gateway
 - Spring Cloud Eureka
 - Java 17
 
 ## Quick Start
 
+### 1. Start Infrastructure
 ```bash
-# Start infrastructure
 docker-compose up -d postgres zookeeper kafka
-
-# Start services (in separate terminals)
-cd eureka-server && ./gradlew bootRun
-cd api-gateway && ./gradlew bootRun
-cd order-service && ./gradlew bootRun
-cd kitchen-service && ./gradlew bootRun
-cd notification-service && ./gradlew bootRun
 ```
+
+### 2. Start Services
+Run each service in IntelliJ or terminal:
+- EurekaServerApplication (port 8761)
+- OrderServiceApplication (port 8082)
+- KitchenServiceApplication (port 8083)
+- NotificationServiceApplication (port 8084)
+
+### 3. Environment Setup
+Create `.env` file in project root:
+
+```env
+# Database
+POSTGRES_DB=restaurant_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_password
+
+# Gmail (Notification Service)
+SPRING_MAIL_HOST=smtp.gmail.com
+SPRING_MAIL_PORT=587
+SPRING_MAIL_USERNAME=shyakasteven2023@gmail.com
+SPRING_MAIL_PASSWORD=your_gmail_app_password
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+
+# Kafka
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+
+# Eureka
+EUREKA_SERVER_URL=http://localhost:8761/eureka
+```
+
+**Important**: Use Gmail App Password, not regular password.
 
 ## Access Points
 
 - **Eureka Dashboard**: http://localhost:8761
-- **API Gateway**: http://localhost:8081
 - **Order Service**: http://localhost:8082
 - **Kitchen Service**: http://localhost:8083
 - **Notification Service**: http://localhost:8084
 
-## API Examples
+## API Testing Guide
 
-### Order Service (via API Gateway)
-- GET /api/orders - Get all orders
-- POST /api/orders - Create new order
-- GET /api/orders/{id} - Get order by ID
+### Order Service (8082)
 
-### Kitchen Service (via API Gateway)
-- GET /api/kitchen/orders - Get all kitchen orders
-- GET /api/kitchen/orders/{id} - Get kitchen order by ID
+#### Create Order
+```
+POST http://localhost:8082/api/orders
+Content-Type: application/json
 
-### Notification Service (via API Gateway)
-- GET /api/notifications - Get notification status
-- GET /actuator/health - Service health check
+{
+  "customerName": "Jean Mugabo",
+  "customerEmail": "shyastyve@gmail.com",
+  "customerPhone": "+250788123456",
+  "items": [
+    {"menuItemId": 1, "quantity": 2},
+    {"menuItemId": 2, "quantity": 1}
+  ]
+}
+```
+
+#### Get Orders
+- `GET http://localhost:8082/api/orders` - All orders
+- `GET http://localhost:8082/api/orders/1` - By ID
+- `GET http://localhost:8082/api/orders/status/PENDING` - By status
+- `GET http://localhost:8082/api/orders/customer/shyastyve@gmail.com` - By email
+- `GET http://localhost:8082/api/orders/statistics` - Stats
+
+#### Update Status
+```
+PUT http://localhost:8082/api/orders/1/status
+Content-Type: application/json
+
+{"status": "CONFIRMED"}
+```
+
+**Statuses**: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED
+
+### Kitchen Service (8083)
+
+#### Get Kitchen Orders
+- `GET http://localhost:8083/api/kitchen/orders` - All orders
+- `GET http://localhost:8083/api/kitchen/orders/1` - By ID
+- `GET http://localhost:8083/api/kitchen/orders/status/RECEIVED` - By status
+- `GET http://localhost:8083/api/kitchen/dashboard/stats` - Dashboard stats
+
+#### Update Kitchen Status
+- `PUT http://localhost:8083/api/kitchen/orders/1/start-preparation` - Start prep
+- `PUT http://localhost:8083/api/kitchen/orders/1/ready` - Mark ready
+- `PUT http://localhost:8083/api/kitchen/orders/1/complete` - Complete
+
+**Statuses**: RECEIVED, IN_PREPARATION, READY, COMPLETED
+
+### Notification Service (8084)
+
+#### Test Email
+```
+POST http://localhost:8084/api/notifications/test-email
+Content-Type: application/json
+
+{
+  "to": "shyastyve@gmail.com",
+  "subject": "Test Email",
+  "message": "This is a test from Restaurant System"
+}
+```
+
+#### Health Check
+- `GET http://localhost:8084/api/notifications/health` - Service health
+
+## Health Checks
+
+Always test health endpoints first:
+- `GET http://localhost:8082/actuator/health` - Order Service
+- `GET http://localhost:8083/actuator/health` - Kitchen Service  
+- `GET http://localhost:8084/actuator/health` - Notification Service
+- `GET http://localhost:8761` - Eureka Server
+
+## Test Workflow
+
+### Complete Order Flow
+1. Create order → Note order ID
+2. Check order appears in kitchen (status: RECEIVED)
+3. Start preparation → Status: IN_PREPARATION
+4. Mark as ready → Status: READY
+5. Complete order → Status: COMPLETED
+6. Verify final status in order service
+
+### Email Testing
+1. Configure Gmail in `.env` (use App Password)
+2. Send test email via notification service
+3. Create order with your email → Auto-notification sent
+
+## Troubleshooting
+
+### Common Issues
+- **Connection refused**: Services not running
+- **Database errors**: PostgreSQL down or wrong credentials
+- **Kafka errors**: Kafka not running on 9092
+- **Email fails**: Wrong Gmail password (use App Password)
+
+### Dependencies
+- All services need Eureka (8761)
+- Order/Kitchen need PostgreSQL + Kafka
+- Notification needs Kafka + email config
+
+## Response Examples
+
+### Order Response
+```json
+{
+  "id": 1,
+  "customerName": "Jean Mugabo",
+  "customerEmail": "shyastyve@gmail.com",
+  "customerPhone": "+250788123456",
+  "status": "PENDING",
+  "totalAmount": 8500.00,
+  "items": [...],
+  "createdAt": "2024-01-15T10:30:00",
+  "updatedAt": null
+}
+```
+
+### Kitchen Order Response
+```json
+{
+  "orderId": 1,
+  "customerName": "Jean Mugabo",
+  "customerEmail": "shyastyve@gmail.com",
+  "status": "RECEIVED",
+  "totalAmount": 8500.00,
+  "items": [...],
+  "receivedAt": "2024-01-15T10:30:00",
+  "startedPreparationAt": null,
+  "completedAt": null,
+  "estimatedCompletionTime": null
+}
+```
+
+## Advanced Testing
+
+### Load Testing
+Use Postman Collection Runner for:
+- Multiple order creations
+- Concurrent kitchen operations
+- Notification throughput
+
+### Integration Testing
+Verify microservice communication:
+1. Order → Kafka event → Kitchen service
+2. Kitchen → Kafka event → Notification service
+3. Service discovery via Eureka
 
 ## Service Health
 

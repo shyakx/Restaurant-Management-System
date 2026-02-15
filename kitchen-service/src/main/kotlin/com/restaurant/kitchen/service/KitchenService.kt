@@ -13,6 +13,9 @@ import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
+/**
+ * Kitchen Service - Manages kitchen order operations.
+ */
 @Service
 @Transactional
 class KitchenService(
@@ -24,8 +27,10 @@ class KitchenService(
         const val ORDER_TOPIC = "order-events"
     }
 
+    // Process order events from Kafka
     @KafkaListener(topics = ["order-events"], groupId = "kitchen-service-group")
     fun handleOrderEvent(orderEvent: OrderEvent) {
+        // Log received event for debugging
         println("=== KAFKA EVENT RECEIVED ===")
         println("Event Type: ${orderEvent.eventType}")
         println("Order ID: ${orderEvent.orderId}")
@@ -48,15 +53,19 @@ class KitchenService(
                 }
             }
         } catch (e: Exception) {
+            // Log error and continue processing
             println("ERROR processing order event: ${e.message}")
             e.printStackTrace()
         }
     }
 
+    // Handle new order placement
     private fun handleOrderPlaced(orderEvent: OrderEvent) {
+        // Log order processing
         println("=== HANDLE ORDER PLACED ===")
         println("Creating kitchen order for orderId: ${orderEvent.orderId}")
         
+        // Create kitchen order with default 30-minute preparation time
         val kitchenOrder = KitchenOrder(
             orderId = orderEvent.orderId,
             customerName = orderEvent.customerName,
@@ -64,11 +73,12 @@ class KitchenService(
             status = KitchenOrderStatus.RECEIVED,
             totalAmount = orderEvent.totalAmount,
             items = mutableListOf(), // Will be set after item creation
-            estimatedCompletionTime = java.time.LocalDateTime.now().plusMinutes(30).toString() // Default 30 mins
+            estimatedCompletionTime = java.time.LocalDateTime.now().plusMinutes(30).toString()
         )
         
         println("Kitchen order created: ${kitchenOrder.orderId}")
 
+        // Create kitchen order items with 15-minute default preparation time
         val kitchenOrderItems = orderEvent.items.map { itemEvent ->
             KitchenOrderItem(
                 kitchenOrder = kitchenOrder,
@@ -94,6 +104,7 @@ class KitchenService(
         println("=== ORDER PLACED HANDLED ===")
     }
 
+    // Handle order cancellation
     private fun handleOrderCancelled(orderEvent: OrderEvent) {
         val kitchenOrder = kitchenOrderRepository.findById(orderEvent.orderId)
         if (kitchenOrder.isPresent) {
@@ -104,37 +115,42 @@ class KitchenService(
         }
     }
 
+    // Start order preparation
     fun startPreparation(orderId: Long): KitchenOrder {
         val kitchenOrder = kitchenOrderRepository.findById(orderId)
             .orElseThrow { IllegalArgumentException("Kitchen order not found: $orderId") }
 
+        // Update order status and timestamps
         kitchenOrder.status = KitchenOrderStatus.IN_PREPARATION
         kitchenOrder.startedPreparationAt = java.time.LocalDateTime.now().toString()
         kitchenOrder.estimatedCompletionTime = java.time.LocalDateTime.now().plusMinutes(25).toString()
 
         val updatedOrder = kitchenOrderRepository.save(kitchenOrder)
 
-        // Publish order preparing event
+        // Publish order preparing event to Kafka
         publishOrderStatusUpdate(updatedOrder.orderId, EventType.ORDER_PREPARING)
 
         return updatedOrder
     }
 
+    // Mark order as ready for pickup
     fun markAsReady(orderId: Long): KitchenOrder {
         val kitchenOrder = kitchenOrderRepository.findById(orderId)
             .orElseThrow { IllegalArgumentException("Kitchen order not found: $orderId") }
 
+        // Update order status and completion time
         kitchenOrder.status = KitchenOrderStatus.READY
         kitchenOrder.completedAt = java.time.LocalDateTime.now().toString()
 
         val updatedOrder = kitchenOrderRepository.save(kitchenOrder)
 
-        // Publish order ready event
+        // Publish order ready event to Kafka
         publishOrderStatusUpdate(updatedOrder.orderId, EventType.ORDER_READY)
 
         return updatedOrder
     }
 
+    // Mark order as completed after pickup
     fun markAsCompleted(orderId: Long): KitchenOrder {
         val kitchenOrder = kitchenOrderRepository.findById(orderId)
             .orElseThrow { IllegalArgumentException("Kitchen order not found: $orderId") }
@@ -144,6 +160,7 @@ class KitchenService(
         return kitchenOrderRepository.save(kitchenOrder)
     }
 
+    // Publish kitchen order status updates to Kafka
     private fun publishOrderStatusUpdate(orderId: Long, eventType: EventType) {
         val kitchenOrder = kitchenOrderRepository.findById(orderId).orElse(null)
         if (kitchenOrder != null) {
@@ -172,18 +189,22 @@ class KitchenService(
                 eventType = eventType
             )
 
-            kafkaTemplate.send(ORDER_TOPIC, orderEvent.orderId.toString(), orderEvent)
+            // Send status update event to Kafka
+        kafkaTemplate.send(ORDER_TOPIC, orderEvent.orderId.toString(), orderEvent)
         }
     }
 
+    // Get all kitchen orders
     fun getKitchenOrders(): List<KitchenOrder> {
         return kitchenOrderRepository.findAll()
     }
 
+    // Get kitchen orders by status
     fun getKitchenOrdersByStatus(status: KitchenOrderStatus): List<KitchenOrder> {
         return kitchenOrderRepository.findByStatus(status)
     }
 
+    // Get kitchen order by ID
     fun getKitchenOrderById(orderId: Long): KitchenOrder {
         return kitchenOrderRepository.findById(orderId)
             .orElseThrow { IllegalArgumentException("Kitchen order not found: $orderId") }

@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 
+/**
+ * Order Service - Core business logic for orders.
+ */
 @Service
 @Transactional
 class OrderService(
@@ -21,9 +24,10 @@ class OrderService(
         const val ORDER_TOPIC = "order-events"
     }
 
+    // Create new order
     @CacheEvict(value = ["orders"], allEntries = true)
     fun createOrder(request: CreateOrderRequest): Order {
-        // Create order with default total amount (will be calculated later)
+        // Create order with default total amount
         val order = Order(
             customerName = request.customerName,
             customerEmail = request.customerEmail,
@@ -48,13 +52,14 @@ class OrderService(
             }
         }
 
-        // Update order with items
+        // Update order with items and calculate total
         order.items = orderItems
         
         // Calculate total amount (simple quantity sum for now)
         val totalAmount = BigDecimal(orderItems.sumOf { it.quantity })
         order.totalAmount = totalAmount
 
+        // Save order and publish event
         val savedOrder = orderRepository.save(order)
 
         // Publish order placed event
@@ -82,25 +87,29 @@ class OrderService(
         return savedOrder
     }
 
+    // Get order by ID
     @Cacheable(value = ["orders"], key = "#id")
     fun getOrderById(id: Long): Order {
         return orderRepository.findById(id)
             .orElseThrow { IllegalArgumentException("Order not found with id: $id") }
     }
 
+    // Get all orders
     @Cacheable(value = ["orders"], key = "'all-orders'")
     fun getAllOrders(): List<Order> {
         return orderRepository.findAll()
     }
 
+    // Get orders by status
     @Cacheable(value = ["orders"], key = "'status-' + #status")
     fun getOrdersByStatus(status: OrderStatus): List<Order> {
         return orderRepository.findByStatus(status)
     }
 
+    // Update order status
     @CacheEvict(value = ["orders"], allEntries = true)
     fun updateOrderStatus(id: Long, status: OrderStatus): Order {
-        val order = getOrderById(id)
+        // Update order status and timestamp
         val updatedOrder = order.copy(
             status = status,
             updatedAt = java.time.LocalDateTime.now().toString()
@@ -140,10 +149,12 @@ class OrderService(
         return savedOrder
     }
 
+    // Get customer orders by email
     fun getOrdersByCustomerEmail(customerEmail: String): List<Order> {
         return orderRepository.findByCustomerEmail(customerEmail)
     }
 
+    // Get order statistics
     fun getOrderStatistics(): Map<String, Long> {
         return OrderStatus.values().associate { status ->
             status.name to orderRepository.countByStatus(status)
