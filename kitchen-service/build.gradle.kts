@@ -23,6 +23,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     
+    // Production Monitoring
+    implementation("io.micrometer:micrometer-registry-prometheus")
+    
     // Cloud & Messaging
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("org.springframework.kafka:spring-kafka")
@@ -48,7 +51,7 @@ dependencies {
 
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:2023.0.0")
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:2023.0.1")
         mavenBom("org.springframework.boot:spring-boot-dependencies:3.2.0")
     }
 }

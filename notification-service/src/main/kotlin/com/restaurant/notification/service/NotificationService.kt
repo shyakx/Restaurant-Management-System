@@ -7,7 +7,6 @@ import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.format.DateTimeFormatter
 
 @Service
 @Transactional
@@ -35,7 +34,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
             Order Details:
             Order ID: #${orderEvent.orderId}
             Total Amount: $${orderEvent.totalAmount}
-            Order Time: ${orderEvent.timestamp.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}
+            Order Time: ${orderEvent.timestamp}
             
             Items:
             ${orderEvent.items.joinToString("\n") { "${it.quantity}x ${it.menuItemName} - $${it.totalPrice}" }}
@@ -95,7 +94,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
             Great news! Your order is ready for pickup.
             
             Order ID: #${orderEvent.orderId}
-            Ready Time: ${orderEvent.timestamp.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))}
+            Ready Time: ${orderEvent.timestamp}
             
             Please visit us to collect your order.
             

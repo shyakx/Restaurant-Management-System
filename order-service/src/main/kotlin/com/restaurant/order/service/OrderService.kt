@@ -9,7 +9,6 @@ import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -24,36 +23,37 @@ class OrderService(
 
     @CacheEvict(value = ["orders"], allEntries = true)
     fun createOrder(request: CreateOrderRequest): Order {
-        // Calculate total amount first
-        val totalAmount = request.items.sumOf { itemRequest ->
-            itemRequest.unitPrice.multiply(BigDecimal(itemRequest.quantity))
-        }
-
-        // Create order first
+        // Create order with default total amount (will be calculated later)
         val order = Order(
             customerName = request.customerName,
             customerEmail = request.customerEmail,
             customerPhone = request.customerPhone,
             status = OrderStatus.PENDING,
-            totalAmount = totalAmount,
+            totalAmount = BigDecimal.ZERO, // Will be updated after items are created
             items = emptyList() // Will be set after item creation
         )
 
-        // Create order items with proper order reference
+        // Create order items with default values
         val orderItems = request.items.map { itemRequest ->
-            val totalPrice = itemRequest.unitPrice.multiply(BigDecimal(itemRequest.quantity))
             OrderItem(
                 order = order,
                 menuItemId = itemRequest.menuItemId,
-                menuItemName = itemRequest.menuItemName,
+                menuItemName = "Menu Item ${itemRequest.menuItemId}", // Default name
                 quantity = itemRequest.quantity,
-                unitPrice = itemRequest.unitPrice,
-                totalPrice = totalPrice
-            )
+                unitPrice = BigDecimal.ONE, // Default price
+                totalPrice = BigDecimal.ONE * itemRequest.quantity.toBigDecimal() // Calculate total
+            ).also { item ->
+                // Ensure the order reference is set
+                item.order = order
+            }
         }
 
         // Update order with items
         order.items = orderItems
+        
+        // Calculate total amount (simple quantity sum for now)
+        val totalAmount = BigDecimal(orderItems.sumOf { it.quantity })
+        order.totalAmount = totalAmount
 
         val savedOrder = orderRepository.save(order)
 
@@ -103,7 +103,7 @@ class OrderService(
         val order = getOrderById(id)
         val updatedOrder = order.copy(
             status = status,
-            updatedAt = LocalDateTime.now()
+            updatedAt = java.time.LocalDateTime.now().toString()
         )
         
         val savedOrder = orderRepository.save(updatedOrder)

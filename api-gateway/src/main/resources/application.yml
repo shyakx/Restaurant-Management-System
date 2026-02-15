@@ -11,18 +11,24 @@ spring:
           uri: http://localhost:8082
           predicates:
             - Path=/api/orders/**,/api/cart/**,/api/menu/**
+          filters:
+            - Retry=3
         
         # Kitchen Service Routes  
         - id: kitchen-service
           uri: http://localhost:8083
           predicates:
             - Path=/api/kitchen/**,/api/orders/status/**
+          filters:
+            - Retry=3
         
         # Notification Service Routes
         - id: notification-service
           uri: http://localhost:8084
           predicates:
             - Path=/api/notifications/**
+          filters:
+            - Retry=3
       
       # Global CORS configuration
       globalcors:
@@ -37,6 +43,19 @@ spring:
               - OPTIONS
             allowedHeaders: "*"
             allowCredentials: true
+      
+      # Performance tuning
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 30s
+        pool:
+          max-connections: 500
+          acquire-timeout: 10000
+    
+    # Spring Cloud Circuit Breaker
+    circuitbreaker:
+      resilience4j:
+        enabled: true
 
   
 # Eureka Service Discovery
@@ -46,25 +65,61 @@ eureka:
       defaultZone: http://localhost:8761/eureka
     register-with-eureka: true
     fetch-registry: true
+    registry-fetch-interval-seconds: 30
   instance:
     prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
 
-# Actuator endpoints
+# Production monitoring
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway,metrics
+        include: health,info,gateway,metrics,prometheus
   endpoint:
     health:
       show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5,0.9,0.95,0.99
+
+# Circuit breaker configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      orderService:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+      kitchenService:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+      notificationService:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
 
 # Logging
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.web.reactive: DEBUG
-    reactor.netty: DEBUG
+    org.springframework.cloud.gateway: INFO
+    org.springframework.web.reactive: INFO
+    reactor.netty: WARN
+    com.netflix.discovery: WARN
+    org.springframework.cloud.circuitbreaker: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 server:
   port: 8081

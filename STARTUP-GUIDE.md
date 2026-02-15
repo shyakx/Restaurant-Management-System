@@ -102,13 +102,13 @@ Check Eureka dashboard (http://localhost:8761) to verify all services registered
 ## 🛠️ Development Notes
 
 ### Fixed Issues
-- ✅ Removed rate limiting (Redis dependency) from API Gateway
+- ✅ Removed rate limiting from API Gateway
 - ✅ Fixed Kafka deserialization in Notification Service
 - ✅ Increased Gradle memory allocation (2GB max)
 - ✅ Simplified service dependencies
 
 ### Important Files Modified
-- `api-gateway/build.gradle.kts` - Removed Redis dependency
+- `api-gateway/build.gradle.kts` - Removed rate limiting dependencies
 - `api-gateway/src/main/resources/application.yml` - Removed rate limiting
 - `notification-service/src/main/resources/application.yml` - Fixed OrderEvent class
 - All `gradle.properties` - Increased memory to 2GB

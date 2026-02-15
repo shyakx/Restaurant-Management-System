@@ -3,21 +3,36 @@ spring:
     name: order-service
   profiles:
     active: local-dev
+  main:
+    allow-bean-definition-overriding: true
+  
+  # Jackson configuration for Java 8 time types
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
   
   # Database Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5432/restaurant_db
-    username: postgres
-    password: password
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      connection-timeout: 20000
   
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
   
     
@@ -52,16 +67,33 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5,0.9,0.95,0.99
 
-# Logging
+# Beautiful logging
 logging:
   level:
-    org.springframework.kafka: DEBUG
-    com.restaurant.order: DEBUG
+    org.springframework.kafka: WARN
+    com.restaurant.order: INFO
+    org.hibernate: WARN
+    org.springframework.web: INFO
+    com.zaxxer.hikari: WARN
+    org.springframework.cloud: WARN
+    com.netflix.discovery: WARN
+    com.netflix.eureka: WARN
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr([%thread]){blue} %clr(%-5level){cyan} %clr(%logger{20}){magenta} - %msg%n"
 
 server:
   port: 8082

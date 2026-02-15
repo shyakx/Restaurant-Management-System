@@ -5,7 +5,6 @@ import com.restaurant.kitchen.entity.KitchenOrderStatus
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
-import java.time.LocalDateTime
 
 @Repository
 interface KitchenOrderRepository : JpaRepository<KitchenOrder, Long> {
@@ -17,12 +16,12 @@ interface KitchenOrderRepository : JpaRepository<KitchenOrder, Long> {
     @Query("SELECT ko FROM KitchenOrder ko WHERE ko.status = :status AND ko.receivedAt >= :startDate")
     fun findByStatusAndReceivedAtAfter(
         status: KitchenOrderStatus, 
-        startDate: LocalDateTime
+        startDate: String
     ): List<KitchenOrder>
     
     @Query("SELECT COUNT(ko) FROM KitchenOrder ko WHERE ko.status = :status")
     fun countByStatus(status: KitchenOrderStatus): Long
     
     @Query("SELECT ko FROM KitchenOrder ko WHERE ko.estimatedCompletionTime <= :now AND ko.status IN ('RECEIVED', 'IN_PREPARATION')")
-    fun findOverdueOrders(now: LocalDateTime): List<KitchenOrder>
+    fun findOverdueOrders(now: String): List<KitchenOrder>
 }

@@ -1,9 +1,11 @@
 package com.restaurant.notification
 
+import io.github.cdimascio.dotenv.Dotenv
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
+import java.io.File
 
 @SpringBootApplication
 @EnableKafka
@@ -11,5 +13,22 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 class NotificationServiceApplication
 
 fun main(args: Array<String>) {
+    // Load environment variables from project root
+    val currentDir = System.getProperty("user.dir")
+    val projectRoot = File(currentDir).parentFile.absolutePath
+    
+    val dotenv = Dotenv.configure()
+        .directory(projectRoot)
+        .ignoreIfMissing()
+        .load()
+    
+    // Set environment variables (only show essential info)
+    val envFile = File(projectRoot, ".env")
+    println("🔧 Environment: ${if (envFile.exists()) "Loaded" else "Missing"} .env file")
+    
+    dotenv.entries().forEach { entry ->
+        System.setProperty(entry.key, entry.value)
+    }
+    
     runApplication<NotificationServiceApplication>(*args)
 }

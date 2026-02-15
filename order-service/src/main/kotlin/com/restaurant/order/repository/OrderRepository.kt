@@ -18,7 +18,7 @@ interface OrderRepository : JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o WHERE o.status = :status AND o.createdAt >= :startDate")
     fun findByStatusAndCreatedAtAfter(
         @Param("status") status: OrderStatus, 
-        @Param("startDate") startDate: java.time.LocalDateTime
+        @Param("startDate") startDate: String
     ): List<Order>
     
     @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")

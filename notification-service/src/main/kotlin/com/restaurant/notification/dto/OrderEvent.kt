@@ -1,7 +1,6 @@
 package com.restaurant.notification.dto
 
 import java.math.BigDecimal
-import java.time.LocalDateTime
 
 data class OrderEvent(
     val orderId: Long,
@@ -11,7 +10,7 @@ data class OrderEvent(
     val status: OrderStatus,
     val totalAmount: BigDecimal,
     val items: List<OrderItemEvent>,
-    val timestamp: LocalDateTime = LocalDateTime.now(),
+    val timestamp: String = java.time.LocalDateTime.now().toString(),
     val eventType: EventType
 )
 

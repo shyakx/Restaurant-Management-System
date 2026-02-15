@@ -1,6 +1,9 @@
 package com.restaurant.order.controller
 
 import com.restaurant.order.dto.CreateOrderRequest
+import com.restaurant.order.dto.UpdateOrderStatusRequest
+import com.restaurant.order.dto.OrderResponse
+import com.restaurant.order.dto.OrderItemResponse
 import com.restaurant.order.entity.Order
 import com.restaurant.order.entity.OrderStatus
 import com.restaurant.order.service.OrderService
@@ -14,43 +17,47 @@ import org.springframework.web.bind.annotation.*
 class OrderController(private val orderService: OrderService) {
 
     @PostMapping
-    fun createOrder(@Valid @RequestBody request: CreateOrderRequest): ResponseEntity<Order> {
+    fun createOrder(@Valid @RequestBody request: CreateOrderRequest): ResponseEntity<OrderResponse> {
         val order = orderService.createOrder(request)
-        return ResponseEntity.status(HttpStatus.CREATED).body(order)
+        return ResponseEntity.status(HttpStatus.CREATED).body(order.toResponse())
     }
 
     @GetMapping("/{id}")
-    fun getOrderById(@PathVariable id: Long): ResponseEntity<Order> {
+    fun getOrderById(@PathVariable id: Long): ResponseEntity<OrderResponse> {
         val order = orderService.getOrderById(id)
-        return ResponseEntity.ok(order)
+        return ResponseEntity.ok(order.toResponse())
     }
 
     @GetMapping
-    fun getAllOrders(): ResponseEntity<List<Order>> {
+    fun getAllOrders(): ResponseEntity<List<OrderResponse>> {
         val orders = orderService.getAllOrders()
-        return ResponseEntity.ok(orders)
+        return ResponseEntity.ok(orders.map { it.toResponse() })
     }
 
     @GetMapping("/status/{status}")
-    fun getOrdersByStatus(@PathVariable status: OrderStatus): ResponseEntity<List<Order>> {
+    fun getOrdersByStatus(@PathVariable status: OrderStatus): ResponseEntity<List<OrderResponse>> {
         val orders = orderService.getOrdersByStatus(status)
-        return ResponseEntity.ok(orders)
+        return ResponseEntity.ok(orders.map { it.toResponse() })
     }
 
     @PutMapping("/{id}/status")
     fun updateOrderStatus(
         @PathVariable id: Long,
-        @RequestBody statusRequest: Map<String, String>
-    ): ResponseEntity<Order> {
-        val status = OrderStatus.valueOf(statusRequest["status"]?.uppercase() ?: "PENDING")
+        @Valid @RequestBody statusRequest: UpdateOrderStatusRequest
+    ): ResponseEntity<OrderResponse> {
+        val status = try {
+            OrderStatus.valueOf(statusRequest.status.uppercase())
+        } catch (e: IllegalArgumentException) {
+            OrderStatus.PENDING
+        }
         val order = orderService.updateOrderStatus(id, status)
-        return ResponseEntity.ok(order)
+        return ResponseEntity.ok(order.toResponse())
     }
 
     @GetMapping("/customer/{email}")
-    fun getOrdersByCustomerEmail(@PathVariable email: String): ResponseEntity<List<Order>> {
+    fun getOrdersByCustomerEmail(@PathVariable email: String): ResponseEntity<List<OrderResponse>> {
         val orders = orderService.getOrdersByCustomerEmail(email)
-        return ResponseEntity.ok(orders)
+        return ResponseEntity.ok(orders.map { it.toResponse() })
     }
 
     @GetMapping("/statistics")
@@ -58,4 +65,30 @@ class OrderController(private val orderService: OrderService) {
         val statistics = orderService.getOrderStatistics()
         return ResponseEntity.ok(statistics)
     }
+}
+
+// Extension functions for mapping
+fun Order.toResponse(): OrderResponse {
+    return OrderResponse(
+        id = this.id!!,
+        customerName = this.customerName,
+        customerEmail = this.customerEmail,
+        customerPhone = this.customerPhone,
+        status = this.status.name,
+        totalAmount = this.totalAmount,
+        items = this.items.map { it.toResponse() },
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt
+    )
+}
+
+fun com.restaurant.order.entity.OrderItem.toResponse(): OrderItemResponse {
+    return OrderItemResponse(
+        id = this.id!!,
+        menuItemId = this.menuItemId,
+        menuItemName = this.menuItemName,
+        quantity = this.quantity,
+        unitPrice = this.unitPrice,
+        totalPrice = this.totalPrice
+    )
 }

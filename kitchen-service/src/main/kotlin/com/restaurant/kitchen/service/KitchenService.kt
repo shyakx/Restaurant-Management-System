@@ -12,7 +12,6 @@ import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -27,25 +26,48 @@ class KitchenService(
 
     @KafkaListener(topics = ["order-events"], groupId = "kitchen-service-group")
     fun handleOrderEvent(orderEvent: OrderEvent) {
-        when (orderEvent.eventType) {
-            EventType.ORDER_PLACED -> handleOrderPlaced(orderEvent)
-            EventType.ORDER_CANCELLED -> handleOrderCancelled(orderEvent)
-            else -> {
-                println("Received event type ${orderEvent.eventType} for order ${orderEvent.orderId}")
+        println("=== KAFKA EVENT RECEIVED ===")
+        println("Event Type: ${orderEvent.eventType}")
+        println("Order ID: ${orderEvent.orderId}")
+        println("Customer: ${orderEvent.customerName}")
+        println("Items count: ${orderEvent.items.size}")
+        println("==============================")
+        
+        try {
+            when (orderEvent.eventType) {
+                EventType.ORDER_PLACED -> {
+                    println("Processing ORDER_PLACED event")
+                    handleOrderPlaced(orderEvent)
+                }
+                EventType.ORDER_CANCELLED -> {
+                    println("Processing ORDER_CANCELLED event")
+                    handleOrderCancelled(orderEvent)
+                }
+                else -> {
+                    println("Received event type ${orderEvent.eventType} for order ${orderEvent.orderId}")
+                }
             }
+        } catch (e: Exception) {
+            println("ERROR processing order event: ${e.message}")
+            e.printStackTrace()
         }
     }
 
     private fun handleOrderPlaced(orderEvent: OrderEvent) {
+        println("=== HANDLE ORDER PLACED ===")
+        println("Creating kitchen order for orderId: ${orderEvent.orderId}")
+        
         val kitchenOrder = KitchenOrder(
             orderId = orderEvent.orderId,
             customerName = orderEvent.customerName,
             customerEmail = orderEvent.customerEmail,
             status = KitchenOrderStatus.RECEIVED,
             totalAmount = orderEvent.totalAmount,
-            items = emptyList(), // Will be set after item creation
-            estimatedCompletionTime = LocalDateTime.now().plusMinutes(30) // Default 30 mins
+            items = mutableListOf(), // Will be set after item creation
+            estimatedCompletionTime = java.time.LocalDateTime.now().plusMinutes(30).toString() // Default 30 mins
         )
+        
+        println("Kitchen order created: ${kitchenOrder.orderId}")
 
         val kitchenOrderItems = orderEvent.items.map { itemEvent ->
             KitchenOrderItem(
@@ -57,14 +79,19 @@ class KitchenService(
                 totalPrice = itemEvent.totalPrice,
                 preparationTimeMinutes = 15 // Default preparation time
             )
-        }
+        }.toMutableList()
+        
+        println("Created ${kitchenOrderItems.size} kitchen order items")
 
         // Update kitchen order with items
         kitchenOrder.items = kitchenOrderItems
 
-        kitchenOrderRepository.save(kitchenOrder)
+        println("Saving kitchen order to database...")
+        val savedOrder = kitchenOrderRepository.save(kitchenOrder)
+        println("Kitchen order saved with orderId: ${savedOrder.orderId}")
         
         println("Kitchen order received: ${kitchenOrder.orderId} for customer ${kitchenOrder.customerName}")
+        println("=== ORDER PLACED HANDLED ===")
     }
 
     private fun handleOrderCancelled(orderEvent: OrderEvent) {
@@ -82,8 +109,8 @@ class KitchenService(
             .orElseThrow { IllegalArgumentException("Kitchen order not found: $orderId") }
 
         kitchenOrder.status = KitchenOrderStatus.IN_PREPARATION
-        kitchenOrder.startedPreparationAt = LocalDateTime.now()
-        kitchenOrder.estimatedCompletionTime = LocalDateTime.now().plusMinutes(25)
+        kitchenOrder.startedPreparationAt = java.time.LocalDateTime.now().toString()
+        kitchenOrder.estimatedCompletionTime = java.time.LocalDateTime.now().plusMinutes(25).toString()
 
         val updatedOrder = kitchenOrderRepository.save(kitchenOrder)
 
@@ -98,7 +125,7 @@ class KitchenService(
             .orElseThrow { IllegalArgumentException("Kitchen order not found: $orderId") }
 
         kitchenOrder.status = KitchenOrderStatus.READY
-        kitchenOrder.completedAt = LocalDateTime.now()
+        kitchenOrder.completedAt = java.time.LocalDateTime.now().toString()
 
         val updatedOrder = kitchenOrderRepository.save(kitchenOrder)
 

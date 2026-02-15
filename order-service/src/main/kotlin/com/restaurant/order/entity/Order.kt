@@ -2,8 +2,6 @@ package com.restaurant.order.entity
 
 import jakarta.persistence.*
 import java.math.BigDecimal
-import java.time.LocalDateTime
-import com.fasterxml.jackson.annotation.JsonManagedReference
 
 @Entity
 @Table(name = "orders")
@@ -13,31 +11,43 @@ data class Order(
     val id: Long? = null,
     
     @Column(nullable = false)
-    val customerName: String,
+    val customerName: String = "",
     
     @Column(nullable = false)
-    val customerEmail: String,
+    val customerEmail: String = "",
     
     @Column(nullable = false)
-    val customerPhone: String,
+    val customerPhone: String = "",
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     var status: OrderStatus = OrderStatus.PENDING,
     
     @Column(nullable = false, precision = 10, scale = 2)
-    val totalAmount: BigDecimal,
+    var totalAmount: BigDecimal = BigDecimal.ZERO,
     
     @OneToMany(mappedBy = "order", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    @JsonManagedReference
     var items: List<OrderItem> = emptyList(),
     
     @Column(nullable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now(),
+    val createdAt: String = "",
     
     @Column
-    var updatedAt: LocalDateTime? = null
-)
+    var updatedAt: String? = null
+) {
+    // Default constructor for Hibernate
+    constructor() : this(
+        id = null,
+        customerName = "",
+        customerEmail = "",
+        customerPhone = "",
+        status = OrderStatus.PENDING,
+        totalAmount = BigDecimal.ZERO,
+        items = emptyList(),
+        createdAt = "",
+        updatedAt = null
+    )
+}
 
 enum class OrderStatus {
     PENDING,

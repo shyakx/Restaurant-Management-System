@@ -3,6 +3,8 @@ spring:
     name: notification-service
   profiles:
     active: local-dev
+  config:
+    import: optional:classpath:.env
   
   # Kafka Configuration
   kafka:
@@ -15,18 +17,19 @@ spring:
         spring.json.trusted.packages: "*"
         spring.json.value.default.type: com.restaurant.notification.dto.OrderEvent
   
-  # Email Configuration (for testing with Mailtrap)
+  # Email Configuration (for Gmail - simplified)
   mail:
-    host: sandbox.smtp.mailtrap.io
-    port: 2525
-    username: ${EMAIL_USERNAME:s.shyaka1@alustudent.com}
-    password: ${EMAIL_PASSWORD:0782194138@Steve}
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+        debug: true
 
 # Eureka Service Discovery
 eureka:
@@ -43,19 +46,31 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5,0.9,0.95,0.99
   health:
     mail:
       enabled: false
 
-# Logging
+# Production logging
 logging:
   level:
-    org.springframework.kafka: DEBUG
-    com.restaurant.notification: DEBUG
+    org.springframework.kafka: INFO
+    com.restaurant.notification: INFO
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 server:
   port: 8084
