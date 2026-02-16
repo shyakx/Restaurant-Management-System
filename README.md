@@ -69,7 +69,7 @@ KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 EUREKA_SERVER_URL=http://localhost:8761/eureka
 ```
 
-**Important**: Use Gmail App Password, not regular password.
+**Note**: Use Gmail App Password, not regular password.
 
 ## Caching Strategy
 
@@ -145,20 +145,8 @@ Content-Type: application/json
 
 ### Notification Service (8084)
 
-#### Test Email
-```
-POST http://localhost:8084/api/notifications/test-email
-Content-Type: application/json
-
-{
-  "to": "shyastyve@gmail.com",
-  "subject": "Test Email",
-  "message": "This is a test from Restaurant System"
-}
-```
-
 #### Health Check
-- `GET http://localhost:8084/api/notifications/health` - Service health
+- `GET http://localhost:8084/actuator/health` - Service health
 
 ## Health Checks
 
@@ -170,15 +158,15 @@ Always test health endpoints first:
 
 ## Test Workflow
 
-### Complete Order Flow
-1. Create order → Note order ID
-2. Check order appears in kitchen (status: RECEIVED)
+### Order Creation Workflow
+1. Create order → Record order ID
+2. Verify order appears in kitchen (status: RECEIVED)
 3. Start preparation → Status: IN_PREPARATION
 4. Mark as ready → Status: READY
 5. Complete order → Status: COMPLETED
-6. Verify final status in order service
+6. Confirm final status in order service
 
-### Email Testing
+### Email Configuration
 1. Configure Gmail in `.env` (use App Password)
 2. Send test email via notification service
 3. Create order with your email → Auto-notification sent
@@ -232,10 +220,7 @@ Always test health endpoints first:
 ## Advanced Testing
 
 ### Load Testing
-Use Postman Collection Runner for:
-- Multiple order creations
-- Concurrent kitchen operations
-- Notification throughput
+Use Postman Collection Runner for multiple order creations and concurrent kitchen operations.
 
 ### Integration Testing
 Verify microservice communication:

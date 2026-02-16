@@ -46,7 +46,7 @@ management:
       percentiles:
         http.server.requests: 0.5,0.9,0.95,0.99
 
-# Production logging
+# Logging configuration
 logging:
   level:
     com.netflix.eureka: INFO
@@ -55,6 +55,6 @@ logging:
     root: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    pattern: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{20} - %msg%n"
   file:
     name: logs/eureka-server.log

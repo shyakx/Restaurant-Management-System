@@ -43,7 +43,7 @@ data class KitchenOrderItem(
     // Default constructor for Hibernate
     constructor() : this(
         id = null,
-        kitchenOrder = KitchenOrder(), // Will be set by Hibernate
+        kitchenOrder = KitchenOrder(),
         menuItemId = 0L,
         menuItemName = "",
         quantity = 0,

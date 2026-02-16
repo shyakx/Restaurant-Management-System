@@ -97,7 +97,7 @@ management:
       percentiles:
         http.server.requests: 0.5,0.9,0.95,0.99
 
-# Beautiful logging
+# Logging configuration
 logging:
   level:
     org.springframework.kafka: WARN
@@ -109,7 +109,7 @@ logging:
     com.netflix.discovery: WARN
     com.netflix.eureka: WARN
   pattern:
-    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr([%thread]){blue} %clr(%-5level){cyan} %clr(%logger{20}){magenta} - %msg%n"
+    pattern: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{20} - %msg%n"
 
 server:
   port: 8082

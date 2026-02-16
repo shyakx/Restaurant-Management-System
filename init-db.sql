@@ -26,11 +26,14 @@ CREATE TABLE menu_items (
 
 -- Insert sample menu items
 INSERT INTO menu_items (name, description, price, category) VALUES
-('Margherita Pizza', 'Classic pizza with tomato sauce, mozzarella, and basil', 12.99, 'Pizza'),
-('Caesar Salad', 'Fresh romaine lettuce with caesar dressing and croutons', 8.99, 'Salad'),
-('Grilled Chicken Sandwich', 'Grilled chicken breast with lettuce and tomato', 10.99, 'Sandwich'),
-('Spaghetti Carbonara', 'Pasta with bacon, eggs, and parmesan cheese', 11.99, 'Pasta'),
-('Chocolate Cake', 'Rich chocolate cake with chocolate frosting', 6.99, 'Dessert');
+('Isombe', 'Cassava leaves with palm oil and groundnuts', 3500.00, 'Main Dish'),
+('Ibihaza', 'Pumpkin and beans cooked together', 2800.00, 'Main Dish'),
+('Umutsima', 'Traditional maize and beans porridge', 2500.00, 'Main Dish'),
+('Brochettes', 'Grilled meat skewers with spices', 4000.00, 'Street Food'),
+('Mizuzu', 'Fried plantains served with sauce', 2000.00, 'Side Dish'),
+('Ugali', 'Stiff porridge made from maize flour', 1500.00, 'Staple Food'),
+('Sambaza', 'Small fried fish served with vegetables', 3200.00, 'Main Dish'),
+('Ikivuguto', 'Traditional fermented milk drink', 1800.00, 'Beverage');
 
 -- Connect to order_db and create tables
 \c order_db;
@@ -57,11 +60,17 @@ CREATE TABLE order_items (
 
 -- Insert sample orders
 INSERT INTO orders (customer_name, customer_email, total_amount, status) VALUES
-('John Doe', 'john@email.com', 23.98, 'COMPLETED'),
-('Jane Smith', 'jane@email.com', 19.98, 'PENDING');
+('Jean Mugabo', 'jean.mugabo@email.rw', 6300.00, 'COMPLETED'),
+('Grace Uwimana', 'grace.uwimana@email.rw', 5500.00, 'PENDING'),
+('Eric Niyonzima', 'eric.niyonzima@email.rw', 7500.00, 'PREPARING');
 
 INSERT INTO order_items (order_id, menu_item_id, item_name, quantity, price, subtotal) VALUES
-(1, 1, 'Margherita Pizza', 1, 12.99, 12.99),
-(1, 2, 'Caesar Salad', 1, 8.99, 8.99),
-(2, 3, 'Grilled Chicken Sandwich', 1, 10.99, 10.99),
-(2, 5, 'Chocolate Cake', 1, 6.99, 6.99);
+(1, 1, 'Isombe', 1, 3500.00, 3500.00),
+(1, 5, 'Mizuzu', 1, 2000.00, 2000.00),
+(1, 8, 'Ikivuguto', 1, 1800.00, 1800.00),
+(2, 2, 'Ibihaza', 1, 2800.00, 2800.00),
+(2, 6, 'Ugali', 1, 1500.00, 1500.00),
+(2, 8, 'Ikivuguto', 1, 1800.00, 1800.00),
+(3, 4, 'Brochettes', 1, 4000.00, 4000.00),
+(3, 7, 'Sambaza', 1, 3200.00, 3200.00),
+(3, 3, 'Umutsima', 1, 2500.00, 2500.00);

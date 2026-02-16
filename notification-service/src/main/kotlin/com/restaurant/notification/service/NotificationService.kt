@@ -160,25 +160,14 @@ class NotificationService(private val mailSender: JavaMailSender) {
             message.subject = subject
             message.text = text
             mailSender.send(message)
-            // Log email delivery success
-            println("Email sent successfully to $to with subject: $subject")
+            println("Email sent to $to - $subject")
         } catch (e: Exception) {
-            // Log email delivery failure
-            println("Failed to send email to $to: ${e.message}")
-            // TODO: Add retry mechanism for failed emails
+            println("Email failed to send to $to: ${e.message}")
         }
     }
 
-    // Build formatted email message
     private fun buildOrderMessage(orderEvent: OrderEvent, defaultMessage: String): String {
-        // Log notification details for debugging
-        println("=== NOTIFICATION ===")
-        println("To: ${orderEvent.customerEmail}")
-        println("Event: ${orderEvent.eventType}")
-        println("Order ID: ${orderEvent.orderId}")
-        println("Message: $defaultMessage")
-        println("==================")
-        
+        println("Notification sent to ${orderEvent.customerEmail} for order #${orderEvent.orderId} - ${orderEvent.eventType}")
         return defaultMessage
     }
 }

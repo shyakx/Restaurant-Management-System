@@ -30,40 +30,22 @@ class KitchenService(
     // Process order events from Kafka
     @KafkaListener(topics = ["order-events"], groupId = "kitchen-service-group")
     fun handleOrderEvent(orderEvent: OrderEvent) {
-        // Log received event for debugging
-        println("=== KAFKA EVENT RECEIVED ===")
-        println("Event Type: ${orderEvent.eventType}")
-        println("Order ID: ${orderEvent.orderId}")
-        println("Customer: ${orderEvent.customerName}")
-        println("Items count: ${orderEvent.items.size}")
-        println("==============================")
+        println("Kitchen received order event: ${orderEvent.eventType} for order #${orderEvent.orderId}")
         
         try {
             when (orderEvent.eventType) {
-                EventType.ORDER_PLACED -> {
-                    println("Processing ORDER_PLACED event")
-                    handleOrderPlaced(orderEvent)
-                }
-                EventType.ORDER_CANCELLED -> {
-                    println("Processing ORDER_CANCELLED event")
-                    handleOrderCancelled(orderEvent)
-                }
-                else -> {
-                    println("Received event type ${orderEvent.eventType} for order ${orderEvent.orderId}")
-                }
+                EventType.ORDER_PLACED -> handleOrderPlaced(orderEvent)
+                EventType.ORDER_CANCELLED -> handleOrderCancelled(orderEvent)
+                else -> println("Unhandled event type: ${orderEvent.eventType} for order ${orderEvent.orderId}")
             }
         } catch (e: Exception) {
-            // Log error and continue processing
-            println("ERROR processing order event: ${e.message}")
-            e.printStackTrace()
+            println("Error processing order event: ${e.message}")
         }
     }
 
     // Handle new order placement
     private fun handleOrderPlaced(orderEvent: OrderEvent) {
-        // Log order processing
-        println("=== HANDLE ORDER PLACED ===")
-        println("Creating kitchen order for orderId: ${orderEvent.orderId}")
+        println("Creating kitchen order for order #${orderEvent.orderId}")
         
         // Create kitchen order with default 30-minute preparation time
         val kitchenOrder = KitchenOrder(
@@ -72,13 +54,10 @@ class KitchenService(
             customerEmail = orderEvent.customerEmail,
             status = KitchenOrderStatus.RECEIVED,
             totalAmount = orderEvent.totalAmount,
-            items = mutableListOf(), // Will be set after item creation
+            items = mutableListOf(),
             estimatedCompletionTime = java.time.LocalDateTime.now().plusMinutes(30).toString()
         )
         
-        println("Kitchen order created: ${kitchenOrder.orderId}")
-
-        // Create kitchen order items with 15-minute default preparation time
         val kitchenOrderItems = orderEvent.items.map { itemEvent ->
             KitchenOrderItem(
                 kitchenOrder = kitchenOrder,
@@ -87,21 +66,14 @@ class KitchenService(
                 quantity = itemEvent.quantity,
                 unitPrice = itemEvent.unitPrice,
                 totalPrice = itemEvent.totalPrice,
-                preparationTimeMinutes = 15 // Default preparation time
+                preparationTimeMinutes = 15
             )
         }.toMutableList()
         
-        println("Created ${kitchenOrderItems.size} kitchen order items")
-
-        // Update kitchen order with items
         kitchenOrder.items = kitchenOrderItems
 
-        println("Saving kitchen order to database...")
         val savedOrder = kitchenOrderRepository.save(kitchenOrder)
-        println("Kitchen order saved with orderId: ${savedOrder.orderId}")
-        
-        println("Kitchen order received: ${kitchenOrder.orderId} for customer ${kitchenOrder.customerName}")
-        println("=== ORDER PLACED HANDLED ===")
+        println("Kitchen order saved: #${savedOrder.orderId}")
     }
 
     // Handle order cancellation

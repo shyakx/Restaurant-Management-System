@@ -24,7 +24,7 @@ fun main(args: Array<String>) {
     
     // Set environment variables (only show essential info)
     val envFile = File(projectRoot, ".env")
-    println("🔧 Environment: ${if (envFile.exists()) "Loaded" else "Missing"} .env file")
+    println("Environment: ${if (envFile.exists()) "Loaded" else "Missing"} .env file")
     
     dotenv.entries().forEach { entry ->
         System.setProperty(entry.key, entry.value)

@@ -110,7 +110,7 @@ resilience4j:
         sliding-window-size: 10
         minimum-number-of-calls: 5
 
-# Logging
+# Logging configuration:
 logging:
   level:
     org.springframework.cloud.gateway: INFO
@@ -119,7 +119,7 @@ logging:
     com.netflix.discovery: WARN
     org.springframework.cloud.circuitbreaker: INFO
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{20} - %msg%n"
 
 server:
   port: 8081

@@ -33,8 +33,8 @@ class OrderService(
             customerEmail = request.customerEmail,
             customerPhone = request.customerPhone,
             status = OrderStatus.PENDING,
-            totalAmount = BigDecimal.ZERO, // Will be updated after items are created
-            items = emptyList() // Will be set after item creation
+            totalAmount = BigDecimal.ZERO,
+            items = emptyList()
         )
 
         // Create order items with default values
@@ -42,12 +42,11 @@ class OrderService(
             OrderItem(
                 order = order,
                 menuItemId = itemRequest.menuItemId,
-                menuItemName = "Menu Item ${itemRequest.menuItemId}", // Default name
+                menuItemName = "Menu Item ${itemRequest.menuItemId}",
                 quantity = itemRequest.quantity,
-                unitPrice = BigDecimal.ONE, // Default price
-                totalPrice = BigDecimal.ONE * itemRequest.quantity.toBigDecimal() // Calculate total
+                unitPrice = BigDecimal.ONE,
+                totalPrice = BigDecimal.ONE * itemRequest.quantity.toBigDecimal()
             ).also { item ->
-                // Ensure the order reference is set
                 item.order = order
             }
         }
