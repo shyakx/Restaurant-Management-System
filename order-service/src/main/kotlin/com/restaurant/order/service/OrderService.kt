@@ -88,20 +88,17 @@ class OrderService(
     }
 
     // Get order by ID
-    @Cacheable(value = ["orders"], key = "#id")
     fun getOrderById(id: Long): Order {
         return orderRepository.findById(id)
             .orElseThrow { IllegalArgumentException("Order not found with id: $id") }
     }
 
     // Get all orders
-    @Cacheable(value = ["orders"], key = "'all-orders'")
     fun getAllOrders(): List<Order> {
         return orderRepository.findAll()
     }
 
     // Get orders by status
-    @Cacheable(value = ["orders"], key = "'status-' + #status")
     fun getOrdersByStatus(status: OrderStatus): List<Order> {
         return orderRepository.findByStatus(status)
     }
@@ -109,6 +106,11 @@ class OrderService(
     // Update order status
     @CacheEvict(value = ["orders"], allEntries = true)
     fun updateOrderStatus(id: Long, status: OrderStatus): Order {
+        // Get existing order
+        val order = orderRepository.findById(id).orElseThrow {
+            IllegalArgumentException("Order not found with id: $id")
+        }
+        
         // Update order status and timestamp
         val updatedOrder = order.copy(
             status = status,
@@ -155,6 +157,7 @@ class OrderService(
     }
 
     // Get order statistics
+    @Cacheable(value = ["order-stats"], key = "'statistics'")
     fun getOrderStatistics(): Map<String, Long> {
         return OrderStatus.values().associate { status ->
             status.name to orderRepository.countByStatus(status)

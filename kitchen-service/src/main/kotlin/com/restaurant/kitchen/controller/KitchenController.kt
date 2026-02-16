@@ -5,6 +5,8 @@ import com.restaurant.kitchen.dto.KitchenOrderItemResponse
 import com.restaurant.kitchen.dto.KitchenOrderStatus as DtoKitchenOrderStatus
 import com.restaurant.kitchen.entity.KitchenOrderStatus as EntityKitchenOrderStatus
 import com.restaurant.kitchen.service.KitchenService
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -17,10 +19,9 @@ class KitchenController(private val kitchenService: KitchenService) {
 
     // Get all kitchen orders
     @GetMapping("/orders")
-    fun getAllKitchenOrders(): ResponseEntity<List<KitchenOrderResponse>> {
+    fun getAllKitchenOrders(): List<KitchenOrderResponse> {
         val orders = kitchenService.getKitchenOrders()
-        val orderResponses = orders.map { it.toResponse() }
-        return ResponseEntity.ok(orderResponses)
+        return orders.map { it.toResponse() }
     }
 
     // Get kitchen order by ID
@@ -42,6 +43,7 @@ class KitchenController(private val kitchenService: KitchenService) {
 
     // Start order preparation
     @PutMapping("/orders/{orderId}/start-preparation")
+    @CacheEvict(value = ["active-orders", "kitchen-stats"], allEntries = true)
     fun startPreparation(@PathVariable orderId: Long): ResponseEntity<KitchenOrderResponse> {
         val order = kitchenService.startPreparation(orderId)
         return ResponseEntity.ok(order.toResponse())
@@ -49,6 +51,7 @@ class KitchenController(private val kitchenService: KitchenService) {
 
     // Mark order as ready for pickup
     @PutMapping("/orders/{orderId}/ready")
+    @CacheEvict(value = ["active-orders", "kitchen-stats"], allEntries = true)
     fun markAsReady(@PathVariable orderId: Long): ResponseEntity<KitchenOrderResponse> {
         val order = kitchenService.markAsReady(orderId)
         return ResponseEntity.ok(order.toResponse())
@@ -56,6 +59,7 @@ class KitchenController(private val kitchenService: KitchenService) {
 
     // Mark order as completed after pickup
     @PutMapping("/orders/{orderId}/complete")
+    @CacheEvict(value = ["active-orders", "kitchen-stats"], allEntries = true)
     fun markAsCompleted(@PathVariable orderId: Long): ResponseEntity<KitchenOrderResponse> {
         val order = kitchenService.markAsCompleted(orderId)
         return ResponseEntity.ok(order.toResponse())
@@ -63,21 +67,20 @@ class KitchenController(private val kitchenService: KitchenService) {
 
     // Get kitchen dashboard statistics
     @GetMapping("/dashboard/stats")
-    fun getKitchenDashboardStats(): ResponseEntity<Map<String, Any>> {
+    @Cacheable(value = ["kitchen-stats"], key = "'dashboard'")
+    fun getKitchenDashboardStats(): Map<String, Any> {
         // Retrieve orders by status for dashboard
         val receivedOrders = kitchenService.getKitchenOrdersByStatus(EntityKitchenOrderStatus.RECEIVED)
         val inPreparationOrders = kitchenService.getKitchenOrdersByStatus(EntityKitchenOrderStatus.IN_PREPARATION)
         val readyOrders = kitchenService.getKitchenOrdersByStatus(EntityKitchenOrderStatus.READY)
 
         // Calculate dashboard statistics
-        val stats = mapOf(
+        return mapOf(
             "received" to receivedOrders.size,
             "inPreparation" to inPreparationOrders.size,
             "ready" to readyOrders.size,
             "totalActive" to (receivedOrders.size + inPreparationOrders.size + readyOrders.size)
         )
-
-        return ResponseEntity.ok(stats)
     }
 }
 

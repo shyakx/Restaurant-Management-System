@@ -1,6 +1,7 @@
 package com.restaurant.order.entity
 
 import jakarta.persistence.*
+import java.io.Serializable
 import java.math.BigDecimal
 
 @Entity
@@ -34,7 +35,7 @@ data class Order(
     
     @Column
     var updatedAt: String? = null
-) {
+) : Serializable {
     // Default constructor for Hibernate
     constructor() : this(
         id = null,

@@ -8,6 +8,7 @@ A modern microservices restaurant management system using Spring Boot, Eureka, K
 - **Order Service**: Handles customer orders and publishes events (port 8082)
 - **Kitchen Service**: Manages food preparation and consumes order events (port 8083)
 - **Notification Service**: Sends email notifications for order events (port 8084)
+- **Redis**: Caching layer for frequently accessed data (port 6379)
 - **PostgreSQL**: Database persistence for all services
 - **Kafka**: Event-driven communication between services
 
@@ -25,6 +26,7 @@ A modern microservices restaurant management system using Spring Boot, Eureka, K
 - Spring Cloud 2023.0.0
 - PostgreSQL Database
 - Apache Kafka
+- Redis Cache
 - Docker & Docker Compose
 - Spring Cloud Eureka
 - Java 17
@@ -33,7 +35,7 @@ A modern microservices restaurant management system using Spring Boot, Eureka, K
 
 ### 1. Start Infrastructure
 ```bash
-docker-compose up -d postgres zookeeper kafka
+docker-compose up -d postgres zookeeper kafka redis
 ```
 
 ### 2. Start Services
@@ -68,6 +70,19 @@ EUREKA_SERVER_URL=http://localhost:8761/eureka
 ```
 
 **Important**: Use Gmail App Password, not regular password.
+
+## Caching Strategy
+
+### Redis Implementation
+- **Order Service**: Caches order statistics and frequently accessed orders
+- **Kitchen Service**: Caches dashboard statistics and active orders  
+- **Cache TTL**: 10 minutes auto-expiration
+- **Cache Eviction**: Automatic on data updates
+
+### Cached Endpoints
+- `GET /api/orders/statistics` - Order statistics (cached)
+- `GET /api/kitchen/dashboard/stats` - Kitchen dashboard (cached)
+- `GET /api/kitchen/orders` - Active kitchen orders (cached)
 
 ## Access Points
 

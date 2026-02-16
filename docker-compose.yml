@@ -20,6 +20,20 @@ services:
     networks:
       - restaurant-network
 
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: restaurant-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - restaurant-network
+
   # Zookeeper (Required for Kafka)
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0

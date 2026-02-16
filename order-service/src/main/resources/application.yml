@@ -51,6 +51,22 @@ spring:
       properties:
         spring.json.trusted.packages: "*"
         spring.json.value.default.type: com.restaurant.order.dto.OrderEvent
+  
+  # Redis Configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000 # 10 minutes
 
 # Eureka Service Discovery
 eureka:
