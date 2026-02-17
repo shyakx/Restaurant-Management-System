@@ -18,18 +18,28 @@ class NotificationService(private val mailSender: JavaMailSender) {
     // Process order events from Kafka
     @KafkaListener(topics = ["order-events"], groupId = "notification-service-group")
     fun handleOrderEvent(orderEvent: OrderEvent) {
-        when (orderEvent.eventType) {
-            EventType.ORDER_PLACED -> sendOrderConfirmation(orderEvent)
-            EventType.ORDER_CONFIRMED -> sendOrderConfirmedNotification(orderEvent)
-            EventType.ORDER_PREPARING -> sendOrderPreparingNotification(orderEvent)
-            EventType.ORDER_READY -> sendOrderReadyNotification(orderEvent)
-            EventType.ORDER_COMPLETED -> sendOrderCompletedNotification(orderEvent)
-            EventType.ORDER_CANCELLED -> sendOrderCancelledNotification(orderEvent)
+        println("📧 [NOTIFICATION] Received order event: ${orderEvent.eventType} for order #${orderEvent.orderId}")
+        println("👤 [NOTIFICATION] Customer: ${orderEvent.customerName} (${orderEvent.customerEmail})")
+        println("💰 [NOTIFICATION] Order Total: $${orderEvent.totalAmount}")
+        
+        try {
+            when (orderEvent.eventType) {
+                EventType.ORDER_PLACED -> sendOrderConfirmation(orderEvent)
+                EventType.ORDER_CONFIRMED -> sendOrderConfirmedNotification(orderEvent)
+                EventType.ORDER_PREPARING -> sendOrderPreparingNotification(orderEvent)
+                EventType.ORDER_READY -> sendOrderReadyNotification(orderEvent)
+                EventType.ORDER_COMPLETED -> sendOrderCompletedNotification(orderEvent)
+                EventType.ORDER_CANCELLED -> sendOrderCancelledNotification(orderEvent)
+                else -> println("⚠️ [NOTIFICATION] Unhandled event type: ${orderEvent.eventType}")
+            }
+        } catch (e: Exception) {
+            println("❌ [NOTIFICATION] Error processing notification: ${e.message}")
         }
     }
 
     // Send order confirmation email
     private fun sendOrderConfirmation(orderEvent: OrderEvent) {
+        println("📧 [NOTIFICATION] Sending order confirmation to ${orderEvent.customerEmail}")
         val subject = "Order Confirmation - #${orderEvent.orderId}"
         val message = buildOrderMessage(orderEvent, """
             Dear ${orderEvent.customerName},
@@ -51,7 +61,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
         """.trimIndent())
 
         sendEmail(orderEvent.customerEmail, subject, message)
-        println("Order confirmation sent to ${orderEvent.customerEmail} for order #${orderEvent.orderId}")
+        println("✅ [NOTIFICATION] Order confirmation sent to ${orderEvent.customerEmail} for order #${orderEvent.orderId}")
     }
 
     // Send order confirmed notification
@@ -155,19 +165,20 @@ class NotificationService(private val mailSender: JavaMailSender) {
     // Send email using JavaMailSender
     private fun sendEmail(to: String, subject: String, text: String) {
         try {
+            println("📤 [NOTIFICATION] Preparing email to $to")
             val message = SimpleMailMessage()
             message.setTo(to)
             message.subject = subject
             message.text = text
             mailSender.send(message)
-            println("Email sent to $to - $subject")
+            println("✅ [NOTIFICATION] Email sent successfully to $to - Subject: $subject")
         } catch (e: Exception) {
-            println("Email failed to send to $to: ${e.message}")
+            println("❌ [NOTIFICATION] Email failed to send to $to: ${e.message}")
         }
     }
 
     private fun buildOrderMessage(orderEvent: OrderEvent, defaultMessage: String): String {
-        println("Notification sent to ${orderEvent.customerEmail} for order #${orderEvent.orderId} - ${orderEvent.eventType}")
+        println("📝 [NOTIFICATION] Building message for order #${orderEvent.orderId} - Event: ${orderEvent.eventType}")
         return defaultMessage
     }
 }
