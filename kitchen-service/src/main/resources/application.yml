@@ -3,14 +3,12 @@ spring:
     name: kitchen-service
   profiles:
     active: local-dev
-  config:
-    import: optional:classpath:.env
   
   # Database Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB}
-    username: ${POSTGRES_USER}
-    password: ${POSTGRES_PASSWORD}
+    url: jdbc:postgresql://postgres:5432/restaurant_db
+    username: postgres
+    password: password
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -30,7 +28,7 @@ spring:
   
   # Kafka Configuration
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
     consumer:
       group-id: kitchen-service-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -47,7 +45,7 @@ spring:
   # Redis Configuration
   data:
     redis:
-      host: localhost
+      host: redis
       port: 6379
       timeout: 2000ms
       lettuce:
@@ -64,7 +62,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: http://eureka-server:8761/eureka
     register-with-eureka: true
     fetch-registry: true
   instance:

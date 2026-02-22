@@ -13,21 +13,29 @@ import java.io.File
 class NotificationServiceApplication
 
 fun main(args: Array<String>) {
-    // Load environment variables from project root
-    val currentDir = System.getProperty("user.dir")
-    val projectRoot = File(currentDir).parentFile.absolutePath
+    // In Docker, environment variables are already set by docker-compose
+    // Only load .env if running locally (not in Docker)
+    val inDocker = System.getenv("IN_DOCKER") == "true"
     
-    val dotenv = Dotenv.configure()
-        .directory(projectRoot)
-        .ignoreIfMissing()
-        .load()
-    
-    // Set environment variables (only show essential info)
-    val envFile = File(projectRoot, ".env")
-    println("Environment: ${if (envFile.exists()) "Loaded" else "Missing"} .env file")
-    
-    dotenv.entries().forEach { entry ->
-        System.setProperty(entry.key, entry.value)
+    if (!inDocker) {
+        // Load environment variables from project root for local development
+        val currentDir = System.getProperty("user.dir")
+        val projectRoot = File(currentDir).parentFile.absolutePath
+        
+        val dotenv = Dotenv.configure()
+            .directory(projectRoot)
+            .ignoreIfMissing()
+            .load()
+        
+        // Set environment variables
+        val envFile = File(projectRoot, ".env")
+        println("Environment: ${if (envFile.exists()) "Loaded" else "Missing"} .env file")
+        
+        dotenv.entries().forEach { entry ->
+            System.setProperty(entry.key, entry.value)
+        }
+    } else {
+        println("Environment: Using Docker environment variables")
     }
     
     runApplication<NotificationServiceApplication>(*args)

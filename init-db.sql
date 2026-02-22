@@ -1,17 +1,14 @@
--- Create separate databases for each service
-CREATE DATABASE menu_db;
-CREATE DATABASE order_db;
+-- Create single database for the restaurant system
+CREATE DATABASE restaurant_db;
 
--- Create users for each service
-CREATE USER menu_user WITH PASSWORD 'password';
-CREATE USER order_user WITH PASSWORD 'password';
+-- Create user for the application
+CREATE USER restaurant_user WITH PASSWORD 'password';
 
 -- Grant privileges
-GRANT ALL PRIVILEGES ON DATABASE menu_db TO menu_user;
-GRANT ALL PRIVILEGES ON DATABASE order_db TO order_user;
+GRANT ALL PRIVILEGES ON DATABASE restaurant_db TO restaurant_user;
 
--- Connect to menu_db and create tables
-\c menu_db;
+-- Connect to restaurant_db and create tables
+\c restaurant_db;
 
 CREATE TABLE menu_items (
     id SERIAL PRIMARY KEY,
@@ -34,9 +31,6 @@ INSERT INTO menu_items (name, description, price, category) VALUES
 ('Ugali', 'Stiff porridge made from maize flour', 1500.00, 'Staple Food'),
 ('Sambaza', 'Small fried fish served with vegetables', 3200.00, 'Main Dish'),
 ('Ikivuguto', 'Traditional fermented milk drink', 1800.00, 'Beverage');
-
--- Connect to order_db and create tables
-\c order_db;
 
 CREATE TABLE orders (
     id SERIAL PRIMARY KEY,

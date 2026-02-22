@@ -1,6 +1,12 @@
 FROM eclipse-temurin:17-jdk-alpine
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
 WORKDIR /app
-COPY . .
-RUN ./gradlew build -x test
+
+COPY build/libs/*.jar app.jar
+
 EXPOSE 8761
-CMD ["java", "-jar", "build/libs/*.jar"]
+
+ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -1,0 +1,530 @@
+{
+	"info": {
+		"_postman_id": "restaurant-management-api",
+		"name": "🍽 Restaurant Management System - Complete API Test Suite",
+		"description": "Comprehensive Postman collection for Restaurant Management System with ALL endpoints including order management, kitchen operations, email notifications, monitoring, and advanced test scenarios",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🏠 System Health & Monitoring",
+			"description": "Check all service health and monitoring dashboards",
+			"item": [
+				{
+					"name": "API Gateway Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/actuator/health"
+					}
+				},
+				{
+					"name": "Order Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{order_service_url}}/actuator/health"
+					}
+				},
+				{
+					"name": "Kitchen Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{kitchen_service_url}}/actuator/health"
+					}
+				},
+				{
+					"name": "Notification Service Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{notification_service_url}}/actuator/health"
+					}
+				},
+				{
+					"name": "Eureka Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{eureka_url}}"
+					},
+					"description": "Service registry dashboard - shows all registered microservices"
+				},
+				{
+					"name": "Kafka UI",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{kafka_ui_url}}"
+					},
+					"description": "Real-time Kafka event monitoring - watch order events flow"
+				}
+			]
+		},
+		{
+			"name": "🛒 Order Management - Complete CRUD",
+			"description": "Full order lifecycle management with email notifications",
+			"item": [
+				{
+					"name": "Create Order - Email Test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Store order ID for later tests",
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('test_order_id', pm.response.json().id);",
+									"    pm.collectionVariables.set('test_customer_email', pm.response.json().customerEmail);",
+									"    console.log('Order created with ID:', pm.response.json().id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerName\": \"{{customer_name}}\",\n  \"customerEmail\": \"{{customer_email}}\",\n  \"customerPhone\": \"{{customer_phone}}\",\n  \"items\": [\n    {\n      \"menuItemId\": 1,\n      \"quantity\": 2\n    },\n    {\n      \"menuItemId\": 2,\n      \"quantity\": 1\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{base_url}}/api/orders"
+					},
+					"description": "Creates new order and triggers immediate email confirmation"
+				},
+				{
+					"name": "Create Order - Large Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerName\": \"Sarah Johnson\",\n  \"customerEmail\": \"sarah.j@example.com\",\n  \"customerPhone\": \"+1987654321\",\n  \"items\": [\n    {\n      \"menuItemId\": 1,\n      \"quantity\": 3\n    },\n    {\n      \"menuItemId\": 3,\n      \"quantity\": 2\n    },\n    {\n      \"menuItemId\": 5,\n      \"quantity\": 1\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{base_url}}/api/orders"
+					},
+					"description": "Test large order with multiple items and different customer"
+				},
+				{
+					"name": "Get All Orders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/orders"
+					}
+				},
+				{
+					"name": "Get Order by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/orders/{{test_order_id}}"
+					},
+					"description": "Use order ID from previous create order test"
+				},
+				{
+					"name": "Get Orders by Status - PENDING",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/orders/status/PENDING"
+					}
+				},
+				{
+					"name": "Get Orders by Status - CONFIRMED",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/orders/status/CONFIRMED"
+					}
+				},
+				{
+					"name": "Get Orders by Status - PREPARING",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/orders/status/PREPARING"
+					}
+				},
+				{
+					"name": "Get Orders by Status - READY",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/orders/status/READY"
+					}
+				},
+				{
+					"name": "Get Orders by Status - COMPLETED",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/orders/status/COMPLETED"
+					}
+				}
+			]
+		},
+		{
+			"name": "👨‍🍳 Kitchen Operations - Full Workflow",
+			"description": "Complete kitchen order management with status progression",
+			"item": [
+				{
+					"name": "Get All Kitchen Orders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{kitchen_service_url}}/api/kitchen/orders"
+					}
+				},
+				{
+					"name": "Get Kitchen Order by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/{{test_order_id}}"
+					}
+				},
+				{
+					"name": "Start Order Preparation",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/{{test_order_id}}/start-preparation"
+					},
+					"description": "Triggers ORDER_PREPARING email notification"
+				},
+				{
+					"name": "Mark Order as Ready",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/{{test_order_id}}/ready"
+					},
+					"description": "Triggers ORDER_READY email notification"
+				},
+				{
+					"name": "Complete Order",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/{{test_order_id}}/complete"
+					},
+					"description": "Triggers ORDER_COMPLETED email notification"
+				},
+				{
+					"name": "Get Kitchen Orders - RECEIVED",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/status/RECEIVED"
+					}
+				},
+				{
+					"name": "Get Kitchen Orders - IN_PREPARATION",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/status/IN_PREPARATION"
+					}
+				},
+				{
+					"name": "Get Kitchen Orders - READY",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/status/READY"
+					}
+				},
+				{
+					"name": "Get Kitchen Orders - COMPLETED",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/status/COMPLETED"
+					}
+				}
+			]
+		},
+		{
+			"name": "📧 Notification Service Testing",
+			"description": "Test notification service endpoints and email functionality",
+			"item": [
+				{
+					"name": "Get Notification Service Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{notification_service_url}}/actuator/info"
+					}
+				},
+				{
+					"name": "Get Notification Metrics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{notification_service_url}}/actuator/metrics"
+					}
+				},
+				{
+					"name": "Get Notification Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{notification_service_url}}/actuator/health"
+					}
+				}
+			]
+		},
+		{
+			"name": "🧪 Complete Email Flow Test",
+			"description": "End-to-end test of email notification workflow",
+			"item": [
+				{
+					"name": "Step 1: Create Order (Triggers Email 1)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set('workflow_order_id', pm.response.json().id);",
+									"pm.collectionVariables.set('workflow_customer_email', pm.response.json().customerEmail);",
+									"console.log('✅ Step 1: Order created - Email 1 sent!');"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerName\": \"Workflow Test\",\n  \"customerEmail\": \"{{customer_email}}\",\n  \"customerPhone\": \"+1234567890\",\n  \"items\": [\n    {\n      \"menuItemId\": 1,\n      \"quantity\": 1\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{base_url}}/api/orders"
+					}
+				},
+				{
+					"name": "Step 2: Start Preparation (Triggers Email 2)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log('✅ Step 2: Preparation started - Email 2 sent!');"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/{{workflow_order_id}}/start-preparation"
+					}
+				},
+				{
+					"name": "Step 3: Mark Ready (Triggers Email 3)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log('✅ Step 3: Order ready - Email 3 sent!');"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/{{workflow_order_id}}/ready"
+					}
+				},
+				{
+					"name": "Step 4: Complete Order (Triggers Email 4)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"console.log('✅ Step 4: Order completed - Email 4 sent!');",
+									"console.log('🎉 Complete email workflow tested! Check {{customer_email}} inbox');"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/{{workflow_order_id}}/complete"
+					}
+				}
+			]
+		},
+		{
+			"name": "🔧 Advanced Testing Scenarios",
+			"description": "Edge cases and stress testing",
+			"item": [
+				{
+					"name": "Create Order - Empty Items",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerName\": \"Test Customer\",\n  \"customerEmail\": \"test@example.com\",\n  \"customerPhone\": \"+1234567890\",\n  \"items\": []\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{base_url}}/api/orders"
+					}
+				},
+				{
+					"name": "Create Order - Invalid Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerName\": \"Test Customer\",\n  \"customerEmail\": \"invalid-email\",\n  \"customerPhone\": \"+1234567890\",\n  \"items\": [\n    {\n      \"menuItemId\": 1,\n      \"quantity\": 1\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": "{{base_url}}/api/orders"
+					}
+				},
+				{
+					"name": "Get Non-existent Order",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": "{{base_url}}/api/orders/99999"
+					}
+				},
+				{
+					"name": "Kitchen Operation - Non-existent Order",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/99999/start-preparation"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8081",
+			"type": "string",
+			"description": "API Gateway base URL"
+		},
+		{
+			"key": "order_service_url",
+			"value": "http://localhost:8082",
+			"type": "string",
+			"description": "Order Service direct URL"
+		},
+		{
+			"key": "kitchen_service_url",
+			"value": "http://localhost:8083",
+			"type": "string",
+			"description": "Kitchen Service direct URL"
+		},
+		{
+			"key": "notification_service_url",
+			"value": "http://localhost:8084",
+			"type": "string",
+			"description": "Notification Service direct URL"
+		},
+		{
+			"key": "eureka_url",
+			"value": "http://localhost:8761",
+			"type": "string",
+			"description": "Eureka Service Registry URL"
+		},
+		{
+			"key": "kafka_ui_url",
+			"value": "http://localhost:8090",
+			"type": "string",
+			"description": "Kafka Monitoring Dashboard URL"
+		},
+		{
+			"key": "customer_name",
+			"value": "John Doe",
+			"type": "string",
+			"description": "Test customer name"
+		},
+		{
+			"key": "customer_email",
+			"value": "shyastyve@gmail.com",
+			"type": "string",
+			"description": "Test customer email - will receive real emails"
+		},
+		{
+			"key": "customer_phone",
+			"value": "+1234567890",
+			"type": "string",
+			"description": "Test customer phone"
+		},
+		{
+			"key": "test_order_id",
+			"value": "",
+			"type": "string",
+			"description": "Order ID from create order test (auto-populated)"
+		},
+		{
+			"key": "workflow_order_id",
+			"value": "",
+			"type": "string",
+			"description": "Order ID for email workflow testing (auto-populated)"
+		}
+	]
+}
