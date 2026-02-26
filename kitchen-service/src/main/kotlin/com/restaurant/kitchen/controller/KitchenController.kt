@@ -15,7 +15,13 @@ import org.springframework.web.bind.annotation.*
  */
 @RestController
 @RequestMapping("/api/kitchen")
-class KitchenController(private val kitchenService: KitchenService) {
+class KitchenController(
+    private val kitchenService: KitchenService
+) {
+
+    companion object {
+        private val requestCount = java.util.concurrent.atomic.AtomicInteger(0)
+    }
 
     // Get all kitchen orders
     @GetMapping("/orders")
@@ -54,6 +60,14 @@ class KitchenController(private val kitchenService: KitchenService) {
     @CacheEvict(value = ["active-orders", "kitchen-stats"], allEntries = true)
     fun markAsReady(@PathVariable orderId: Long): ResponseEntity<KitchenOrderResponse> {
         val order = kitchenService.markAsReady(orderId)
+        return ResponseEntity.ok(order.toResponse())
+    }
+
+    // Cancel order
+    @PutMapping("/orders/{orderId}/cancel")
+    @CacheEvict(value = ["active-orders", "kitchen-stats"], allEntries = true)
+    fun cancelOrder(@PathVariable orderId: Long): ResponseEntity<KitchenOrderResponse> {
+        val order = kitchenService.cancelOrder(orderId)
         return ResponseEntity.ok(order.toResponse())
     }
 

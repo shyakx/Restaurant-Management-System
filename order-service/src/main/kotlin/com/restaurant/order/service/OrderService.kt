@@ -1,5 +1,6 @@
 package com.restaurant.order.service
 
+import com.restaurant.order.controller.MenuController
 import com.restaurant.order.dto.*
 import com.restaurant.order.entity.*
 import com.restaurant.order.repository.OrderRepository
@@ -8,6 +9,7 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.beans.factory.annotation.Autowired
 import java.math.BigDecimal
 
 /**
@@ -20,6 +22,9 @@ class OrderService(
     private val kafkaTemplate: KafkaTemplate<String, Any>
 ) {
 
+    @Autowired
+    private lateinit var menuController: MenuController
+
     companion object {
         const val ORDER_TOPIC = "order-events"
     }
@@ -27,6 +32,12 @@ class OrderService(
     // Create new order
     @CacheEvict(value = ["orders"], allEntries = true)
     fun createOrder(request: CreateOrderRequest): Order {
+        // Validate all menu items before creating order
+        request.items.forEach { itemRequest ->
+            if (!menuController.validateMenuItemExists(itemRequest.menuItemId)) {
+                throw IllegalArgumentException("Menu item with ID ${itemRequest.menuItemId} is not available")
+            }
+        }
         // Create order with default total amount
         val order = Order(
             customerName = request.customerName,
@@ -37,15 +48,18 @@ class OrderService(
             items = emptyList()
         )
 
-        // Create order items with default values
+        // Create order items with validated pricing
         val orderItems = request.items.map { itemRequest ->
+            val menuItemPrice = menuController.getMenuItemPrice(itemRequest.menuItemId)
+                ?: throw IllegalArgumentException("Price not available for menu item ${itemRequest.menuItemId}")
+            
             OrderItem(
                 order = order,
                 menuItemId = itemRequest.menuItemId,
                 menuItemName = "Menu Item ${itemRequest.menuItemId}",
                 quantity = itemRequest.quantity,
-                unitPrice = BigDecimal.ONE,
-                totalPrice = BigDecimal.ONE * itemRequest.quantity.toBigDecimal()
+                unitPrice = menuItemPrice,
+                totalPrice = menuItemPrice * itemRequest.quantity.toBigDecimal()
             ).also { item ->
                 item.order = order
             }
@@ -54,8 +68,8 @@ class OrderService(
         // Update order with items and calculate total
         order.items = orderItems
         
-        // Calculate total amount (simple quantity sum for now)
-        val totalAmount = BigDecimal(orderItems.sumOf { it.quantity })
+        // Calculate total amount using actual menu item prices
+        val totalAmount = orderItems.sumOf { it.totalPrice }
         order.totalAmount = totalAmount
 
         // Save order and publish event

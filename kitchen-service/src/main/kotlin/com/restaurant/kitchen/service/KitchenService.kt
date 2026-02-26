@@ -30,28 +30,21 @@ class KitchenService(
     // Process order events from Kafka
     @KafkaListener(topics = ["order-events"], groupId = "kitchen-service-group")
     fun handleOrderEvent(orderEvent: OrderEvent) {
-        println("🍳 [KITCHEN] Received order event: ${orderEvent.eventType} for order #${orderEvent.orderId}")
-        println("📝 [KITCHEN] Customer: ${orderEvent.customerName} (${orderEvent.customerEmail})")
-        println("💰 [KITCHEN] Order Total: $${orderEvent.totalAmount}")
-        
         try {
             when (orderEvent.eventType) {
                 EventType.ORDER_PLACED -> handleOrderPlaced(orderEvent)
                 EventType.ORDER_CANCELLED -> handleOrderCancelled(orderEvent)
                 EventType.ORDER_PREPARING -> handleOrderPreparing(orderEvent)
                 EventType.ORDER_READY -> handleOrderReady(orderEvent)
-                else -> println("⚠️ [KITCHEN] Unhandled event type: ${orderEvent.eventType} for order ${orderEvent.orderId}")
+                else -> println("Unhandled event type: ${orderEvent.eventType} for order ${orderEvent.orderId}")
             }
         } catch (e: Exception) {
-            println("❌ [KITCHEN] Error processing order event: ${e.message}")
+            println("Error processing order event: ${e.message}")
         }
     }
 
     // Handle new order placement
     private fun handleOrderPlaced(orderEvent: OrderEvent) {
-        println("🆕 [KITCHEN] Creating kitchen order for order #${orderEvent.orderId}")
-        println("🍽 [KITCHEN] Items: ${orderEvent.items.size} dishes to prepare")
-        
         // Create kitchen order with default 30-minute preparation time
         val kitchenOrder = KitchenOrder(
             orderId = orderEvent.orderId,
@@ -77,52 +70,44 @@ class KitchenService(
         
         kitchenOrder.items = kitchenOrderItems
 
-        val savedOrder = kitchenOrderRepository.save(kitchenOrder)
-        println("✅ [KITCHEN] Kitchen order created: #${savedOrder.orderId} | Status: ${savedOrder.status}")
-        println("⏰ [KITCHEN] ETA: ${savedOrder.estimatedCompletionTime}")
+        kitchenOrderRepository.save(kitchenOrder)
     }
 
     // Handle order cancellation
     private fun handleOrderCancelled(orderEvent: OrderEvent) {
-        println("🚫 [KITCHEN] Order cancellation received for #${orderEvent.orderId}")
         val kitchenOrder = kitchenOrderRepository.findById(orderEvent.orderId)
         if (kitchenOrder.isPresent) {
             val order = kitchenOrder.get()
             order.status = KitchenOrderStatus.CANCELLED
             kitchenOrderRepository.save(order)
-            println("✅ [KITCHEN] Order #${order.orderId} cancelled successfully")
         } else {
-            println("⚠️ [KITCHEN] Order #${orderEvent.orderId} not found for cancellation")
+            println("Order #${orderEvent.orderId} not found for cancellation")
         }
     }
 
     // Handle order preparation event
     private fun handleOrderPreparing(orderEvent: OrderEvent) {
-        println("👨‍🍳 [KITCHEN] Starting preparation for order #${orderEvent.orderId}")
         val kitchenOrder = kitchenOrderRepository.findById(orderEvent.orderId)
         if (kitchenOrder.isPresent) {
             val order = kitchenOrder.get()
             order.status = KitchenOrderStatus.IN_PREPARATION
             order.startedPreparationAt = java.time.LocalDateTime.now().toString()
             kitchenOrderRepository.save(order)
-            println("🔥 [KITCHEN] Order #${order.orderId} now preparing | Started: ${order.startedPreparationAt}")
         } else {
-            println("⚠️ [KITCHEN] Order #${orderEvent.orderId} not found for preparation")
+            println("Order #${orderEvent.orderId} not found for preparation")
         }
     }
 
     // Handle order ready event
     private fun handleOrderReady(orderEvent: OrderEvent) {
-        println("🔔 [KITCHEN] Order ready notification received for #${orderEvent.orderId}")
         val kitchenOrder = kitchenOrderRepository.findById(orderEvent.orderId)
         if (kitchenOrder.isPresent) {
             val order = kitchenOrder.get()
             order.status = KitchenOrderStatus.READY
             order.completedAt = java.time.LocalDateTime.now().toString()
             kitchenOrderRepository.save(order)
-            println("🎉 [KITCHEN] Order #${order.orderId} ready for pickup | Completed: ${order.completedAt}")
         } else {
-            println("⚠️ [KITCHEN] Order #${orderEvent.orderId} not found for ready status")
+            println("Order #${orderEvent.orderId} not found for ready status")
         }
     }
 
@@ -139,9 +124,7 @@ class KitchenService(
         val updatedOrder = kitchenOrderRepository.save(kitchenOrder)
 
         // Publish order preparing event to Kafka
-        println("📡 [KITCHEN] Publishing ORDER_PREPARING event for order #${updatedOrder.orderId}")
         publishOrderStatusUpdate(updatedOrder.orderId, EventType.ORDER_PREPARING)
-        println("📤 [KITCHEN] Event published successfully")
 
         return updatedOrder
     }
@@ -158,9 +141,22 @@ class KitchenService(
         val updatedOrder = kitchenOrderRepository.save(kitchenOrder)
 
         // Publish order ready event to Kafka
-        println("🔔 [KITCHEN] Publishing ORDER_READY event for order #${updatedOrder.orderId}")
         publishOrderStatusUpdate(updatedOrder.orderId, EventType.ORDER_READY)
-        println("📤 [KITCHEN] Event published successfully")
+
+        return updatedOrder
+    }
+
+    // Cancel order and publish cancellation event
+    fun cancelOrder(orderId: Long): KitchenOrder {
+        val kitchenOrder = kitchenOrderRepository.findById(orderId)
+            .orElseThrow { IllegalArgumentException("Kitchen order not found: $orderId") }
+
+        kitchenOrder.status = KitchenOrderStatus.CANCELLED
+
+        val updatedOrder = kitchenOrderRepository.save(kitchenOrder)
+
+        // Publish order cancelled event to Kafka
+        publishOrderStatusUpdate(updatedOrder.orderId, EventType.ORDER_CANCELLED)
 
         return updatedOrder
     }
@@ -172,44 +168,51 @@ class KitchenService(
 
         kitchenOrder.status = KitchenOrderStatus.COMPLETED
 
-        return kitchenOrderRepository.save(kitchenOrder)
+        val updatedOrder = kitchenOrderRepository.save(kitchenOrder)
+
+        // Publish order completed event to Kafka
+        publishOrderStatusUpdate(updatedOrder.orderId, EventType.ORDER_COMPLETED)
+
+        return updatedOrder
     }
 
     // Publish kitchen order status updates to Kafka
     private fun publishOrderStatusUpdate(orderId: Long, eventType: EventType) {
-        println("🚀 [KITCHEN] Preparing to publish event: $eventType for order #$orderId")
-        val kitchenOrder = kitchenOrderRepository.findById(orderId).orElse(null)
-        if (kitchenOrder != null) {
-            val orderEvent = OrderEvent(
-                orderId = kitchenOrder.orderId,
-                customerName = kitchenOrder.customerName,
-                customerEmail = kitchenOrder.customerEmail,
-                customerPhone = "", // Not stored in kitchen order
-                status = when (kitchenOrder.status) {
-                    KitchenOrderStatus.IN_PREPARATION -> OrderStatus.PREPARING
-                    KitchenOrderStatus.READY -> OrderStatus.READY
-                    KitchenOrderStatus.COMPLETED -> OrderStatus.COMPLETED
-                    KitchenOrderStatus.CANCELLED -> OrderStatus.CANCELLED
-                    else -> OrderStatus.PENDING
-                },
-                totalAmount = kitchenOrder.totalAmount,
-                items = kitchenOrder.items.map { item ->
-                    OrderItemEvent(
-                        menuItemId = item.menuItemId,
-                        menuItemName = item.menuItemName,
-                        quantity = item.quantity,
-                        unitPrice = item.unitPrice,
-                        totalPrice = item.totalPrice
-                    )
-                },
-                eventType = eventType
-            )
+        try {
+            val kitchenOrder = kitchenOrderRepository.findById(orderId).orElse(null)
+            if (kitchenOrder != null) {
+                val orderEvent = OrderEvent(
+                    orderId = kitchenOrder.orderId,
+                    customerName = kitchenOrder.customerName,
+                    customerEmail = kitchenOrder.customerEmail,
+                    customerPhone = "", // Not stored in kitchen order
+                    status = when (kitchenOrder.status) {
+                        KitchenOrderStatus.IN_PREPARATION -> com.restaurant.kitchen.dto.OrderStatus.PREPARING
+                        KitchenOrderStatus.READY -> com.restaurant.kitchen.dto.OrderStatus.READY
+                        KitchenOrderStatus.COMPLETED -> com.restaurant.kitchen.dto.OrderStatus.COMPLETED
+                        KitchenOrderStatus.CANCELLED -> com.restaurant.kitchen.dto.OrderStatus.CANCELLED
+                        else -> com.restaurant.kitchen.dto.OrderStatus.PENDING
+                    },
+                    totalAmount = kitchenOrder.totalAmount,
+                    items = kitchenOrder.items.map { item ->
+                        com.restaurant.kitchen.dto.OrderItemEvent(
+                            menuItemId = item.menuItemId,
+                            menuItemName = item.menuItemName,
+                            quantity = item.quantity,
+                            unitPrice = item.unitPrice,
+                            totalPrice = item.totalPrice
+                        )
+                    },
+                    eventType = eventType
+                )
 
-            // Send status update event to Kafka
-            kafkaTemplate.send(ORDER_TOPIC, orderEvent.orderId.toString(), orderEvent)
-            println("✅ [KITCHEN] Event published: $eventType for order #${orderEvent.orderId}")
-        } else {
-            println("❌ [KITCHEN] Failed to publish event - Order #$orderId not found")
+                kafkaTemplate.send(ORDER_TOPIC, orderEvent.orderId.toString(), orderEvent)
+            } else {
+                println("Failed to publish event: Order #$orderId not found")
+            }
+        } catch (e: Exception) {
+            println("Error publishing event: $eventType for order #$orderId - ${e.message}")
+            e.printStackTrace()
         }
     }
 

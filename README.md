@@ -187,7 +187,7 @@ Import the provided Postman collection for comprehensive API testing:
 
 ```bash
 # Import this file into Postman
-postman-tests-updated.json
+Restaurant-Management-API.postman_collection.json
 ```
 
 The collection includes:

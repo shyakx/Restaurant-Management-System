@@ -6,19 +6,19 @@ spring:
   cloud:
     gateway:
       routes:
-        # Route all order-related requests to order service
-        - id: order-service
-          uri: http://order-service:8082
-          predicates:
-            - Path=/api/orders/**,/api/cart/**,/api/menu/**
-          filters:
-            - Retry=3
-        
-        # Route kitchen operations to kitchen service
+        # Route kitchen operations FIRST (higher priority)
         - id: kitchen-service
           uri: http://kitchen-service:8083
           predicates:
             - Path=/api/kitchen/**,/api/orders/status/**
+          filters:
+            - Retry=3
+        
+        # Route all order-related requests to order service SECOND (lower priority)
+        - id: order-service
+          uri: http://order-service:8082
+          predicates:
+            - Path=/api/orders/**,/api/cart/**,/api/menu/**
           filters:
             - Retry=3
         

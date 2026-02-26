@@ -6,6 +6,11 @@ spring:
   main:
     allow-bean-definition-overriding: true
   
+  # Restaurant-specific configuration
+  restaurant:
+    menu:
+      enabled: true  # Enable menu loading from configuration files
+  
   # Handle JSON dates properly in API responses
   jackson:
     serialization:

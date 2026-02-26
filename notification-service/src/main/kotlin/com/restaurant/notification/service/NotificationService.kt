@@ -18,9 +18,9 @@ class NotificationService(private val mailSender: JavaMailSender) {
     // Process order events from Kafka
     @KafkaListener(topics = ["order-events"], groupId = "notification-service-group")
     fun handleOrderEvent(orderEvent: OrderEvent) {
-        println("📧 [NOTIFICATION] Received order event: ${orderEvent.eventType} for order #${orderEvent.orderId}")
-        println("👤 [NOTIFICATION] Customer: ${orderEvent.customerName} (${orderEvent.customerEmail})")
-        println("💰 [NOTIFICATION] Order Total: $${orderEvent.totalAmount}")
+        println("Received order event: ${orderEvent.eventType} for order #${orderEvent.orderId}")
+        println("Customer: ${orderEvent.customerName} (${orderEvent.customerEmail})")
+        println("Order Total: $${orderEvent.totalAmount}")
         
         try {
             when (orderEvent.eventType) {
@@ -30,10 +30,10 @@ class NotificationService(private val mailSender: JavaMailSender) {
                 EventType.ORDER_READY -> sendOrderReadyNotification(orderEvent)
                 EventType.ORDER_COMPLETED -> sendOrderCompletedNotification(orderEvent)
                 EventType.ORDER_CANCELLED -> sendOrderCancelledNotification(orderEvent)
-                else -> println("⚠️ [NOTIFICATION] Unhandled event type: ${orderEvent.eventType}")
+                else -> println("Unhandled event type: ${orderEvent.eventType}")
             }
         } catch (e: Exception) {
-            println("❌ [NOTIFICATION] Error processing notification: ${e.message}")
+            println("Error processing notification: ${e.message}")
         }
     }
 
@@ -165,20 +165,19 @@ class NotificationService(private val mailSender: JavaMailSender) {
     // Send email using JavaMailSender
     private fun sendEmail(to: String, subject: String, text: String) {
         try {
-            println("📤 [NOTIFICATION] Preparing email to $to")
             val message = SimpleMailMessage()
             message.setTo(to)
             message.subject = subject
             message.text = text
             mailSender.send(message)
-            println("✅ [NOTIFICATION] Email sent successfully to $to - Subject: $subject")
+            println("Email sent successfully to $to - Subject: $subject")
         } catch (e: Exception) {
-            println("❌ [NOTIFICATION] Email failed to send to $to: ${e.message}")
+            println("Email failed to send to $to: ${e.message}")
         }
     }
 
     private fun buildOrderMessage(orderEvent: OrderEvent, defaultMessage: String): String {
-        println("📝 [NOTIFICATION] Building message for order #${orderEvent.orderId} - Event: ${orderEvent.eventType}")
+        println(" [NOTIFICATION] Building message for order #${orderEvent.orderId} - Event: ${orderEvent.eventType}")
         return defaultMessage
     }
 }
