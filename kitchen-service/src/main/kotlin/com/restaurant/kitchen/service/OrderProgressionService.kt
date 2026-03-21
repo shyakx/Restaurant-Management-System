@@ -4,6 +4,7 @@ import com.restaurant.kitchen.dto.EventType
 import com.restaurant.kitchen.entity.KitchenOrder
 import com.restaurant.kitchen.entity.KitchenOrderStatus
 import com.restaurant.kitchen.repository.KitchenOrderRepository
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,9 +20,17 @@ class OrderProgressionService(
     private val kitchenService: KitchenService
 ) {
 
+    @Value("\${restaurant.kitchen.auto-progression.enabled:true}")
+    private var autoProgressionEnabled: Boolean = true
+
     // Progress orders every 30 seconds for demo purposes
     @Scheduled(fixedDelay = 30000)
     fun progressOrders() {
+        if (!autoProgressionEnabled) {
+            println("⏸️ [PROGRESSION] Auto-progression is disabled")
+            return
+        }
+        
         println("⏰ [PROGRESSION] Checking orders for automatic progression...")
         
         val pendingOrders = kitchenOrderRepository.findByStatus(KitchenOrderStatus.RECEIVED)

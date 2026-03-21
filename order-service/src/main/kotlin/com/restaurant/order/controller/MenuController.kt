@@ -1,6 +1,7 @@
 package com.restaurant.order.controller
 
 import com.restaurant.order.dto.MenuItemResponse
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.env.Environment
 import org.springframework.http.ResponseEntity
@@ -9,6 +10,8 @@ import java.math.BigDecimal
 import jakarta.annotation.PostConstruct
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.core.io.ClassPathResource
 import org.springframework.util.FileCopyUtils
 
@@ -19,6 +22,7 @@ import org.springframework.util.FileCopyUtils
 @RequestMapping("/api/menu")
 class MenuController(private val environment: Environment) {
 
+    private val logger = LoggerFactory.getLogger(MenuController::class.java)
     private val objectMapper = ObjectMapper()
     
     @Value("\${restaurant.menu.enabled:false}")
@@ -32,7 +36,12 @@ class MenuController(private val environment: Environment) {
      */
     @PostConstruct
     private fun initializeMenuItems() {
+        logger.info("Initializing menu items. Menu enabled: $menuEnabled")
         menuItems = loadMenuItemsFromConfiguration()
+        logger.info("Menu items loaded successfully. Total items: ${menuItems.size}")
+        menuItems.forEach { item ->
+            logger.info("Loaded menu item: ID=${item.id}, Name=${item.name}, Available=${item.available}")
+        }
     }
 
     /**
@@ -41,11 +50,19 @@ class MenuController(private val environment: Environment) {
      */
     private fun loadMenuItemsFromConfiguration(): List<MenuItemResponse> {
         return try {
+            logger.info("Loading menu items from configuration. Menu enabled: $menuEnabled")
             when {
-                menuEnabled -> loadFromPropertiesFile()
-                else -> emptyList()
+                menuEnabled -> {
+                    logger.info("Menu is enabled, loading from properties file")
+                    loadFromPropertiesFile()
+                }
+                else -> {
+                    logger.warn("Menu is disabled, returning empty list")
+                    emptyList()
+                }
             }
         } catch (e: Exception) {
+            logger.error("Error loading menu items from configuration", e)
             // Log error and return empty list to prevent system failure
             emptyList()
         }
@@ -57,18 +74,32 @@ class MenuController(private val environment: Environment) {
      */
     private fun loadFromPropertiesFile(): List<MenuItemResponse> {
         return try {
+            logger.info("Loading menu items from properties file")
             val resource = ClassPathResource("menu.properties")
+            logger.info("Menu properties resource exists: ${resource.exists()}")
+            
+            if (!resource.exists()) {
+                logger.error("menu.properties file not found in classpath")
+                return emptyList()
+            }
+            
             val properties = java.util.Properties()
             properties.load(resource.inputStream)
             
             val menuItemsJson = properties.getProperty("restaurant.menu.items")
+            logger.info("Menu items JSON property: $menuItemsJson")
+            
             if (!menuItemsJson.isNullOrBlank()) {
-                objectMapper.readValue(menuItemsJson, object : com.fasterxml.jackson.core.type.TypeReference<List<MenuItemData>>() {})
+                val items = objectMapper.readValue(menuItemsJson, object : com.fasterxml.jackson.core.type.TypeReference<List<MenuItemData>>() {})
                     .map { it.toResponse() }
+                logger.info("Successfully parsed ${items.size} menu items from JSON")
+                return items
             } else {
+                logger.warn("restaurant.menu.items property is null or blank")
                 emptyList()
             }
         } catch (e: Exception) {
+            logger.error("Error loading menu items from properties file", e)
             emptyList()
         }
     }
@@ -77,12 +108,12 @@ class MenuController(private val environment: Environment) {
      * Data class for parsing menu item configuration.
      */
     private data class MenuItemData(
-        val id: Long,
-        val name: String,
-        val description: String,
-        val price: Double,
-        val category: String,
-        val available: Boolean
+        @JsonProperty("id") val id: Long,
+        @JsonProperty("name") val name: String,
+        @JsonProperty("description") val description: String,
+        @JsonProperty("price") val price: Double,
+        @JsonProperty("category") val category: String,
+        @JsonProperty("available") val available: Boolean
     ) {
         fun toResponse(): MenuItemResponse {
             return MenuItemResponse(
