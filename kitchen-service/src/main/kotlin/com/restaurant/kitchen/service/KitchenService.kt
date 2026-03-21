@@ -8,6 +8,8 @@ import com.restaurant.kitchen.entity.KitchenOrder
 import com.restaurant.kitchen.entity.KitchenOrderItem
 import com.restaurant.kitchen.entity.KitchenOrderStatus
 import com.restaurant.kitchen.repository.KitchenOrderRepository
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
@@ -216,17 +218,18 @@ class KitchenService(
         }
     }
 
-    // Get all kitchen orders
-    fun getKitchenOrders(): List<KitchenOrder> {
-        return kitchenOrderRepository.findAll()
+    fun getKitchenOrders(pageable: Pageable): Page<KitchenOrder> {
+        return kitchenOrderRepository.findAll(pageable)
     }
 
-    // Get kitchen orders by status
+    fun getKitchenOrdersByStatus(status: KitchenOrderStatus, pageable: Pageable): Page<KitchenOrder> {
+        return kitchenOrderRepository.findByStatus(status, pageable)
+    }
+
     fun getKitchenOrdersByStatus(status: KitchenOrderStatus): List<KitchenOrder> {
         return kitchenOrderRepository.findByStatus(status)
     }
 
-    // Get kitchen order by ID
     fun getKitchenOrderById(orderId: Long): KitchenOrder {
         return kitchenOrderRepository.findById(orderId)
             .orElseThrow { IllegalArgumentException("Kitchen order not found: $orderId") }

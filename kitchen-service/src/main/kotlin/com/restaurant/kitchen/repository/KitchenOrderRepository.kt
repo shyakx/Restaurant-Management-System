@@ -2,12 +2,16 @@ package com.restaurant.kitchen.repository
 
 import com.restaurant.kitchen.entity.KitchenOrder
 import com.restaurant.kitchen.entity.KitchenOrderStatus
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 
 @Repository
 interface KitchenOrderRepository : JpaRepository<KitchenOrder, Long> {
+    
+    fun findByStatus(status: KitchenOrderStatus, pageable: Pageable): Page<KitchenOrder>
     
     fun findByStatus(status: KitchenOrderStatus): List<KitchenOrder>
     

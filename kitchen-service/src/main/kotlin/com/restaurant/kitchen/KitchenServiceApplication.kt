@@ -6,14 +6,12 @@ import org.springframework.boot.runApplication
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
-import org.springframework.scheduling.annotation.EnableScheduling
 import java.io.File
 
 @SpringBootApplication
 @EnableKafka
 @EnableDiscoveryClient
 @EnableCaching
-@EnableScheduling
 class KitchenServiceApplication
 
 fun main(args: Array<String>) {

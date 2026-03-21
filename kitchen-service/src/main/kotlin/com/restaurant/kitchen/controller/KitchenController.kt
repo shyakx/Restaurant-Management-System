@@ -84,12 +84,10 @@ class KitchenController(
     @GetMapping("/dashboard/stats")
     @Cacheable(value = ["kitchen-stats"], key = "'dashboard'")
     fun getKitchenDashboardStats(): Map<String, Any> {
-        // Get orders by status for dashboard
         val receivedOrders = kitchenService.getKitchenOrdersByStatus(EntityKitchenOrderStatus.RECEIVED)
         val inPreparationOrders = kitchenService.getKitchenOrdersByStatus(EntityKitchenOrderStatus.IN_PREPARATION)
         val readyOrders = kitchenService.getKitchenOrdersByStatus(EntityKitchenOrderStatus.READY)
 
-        // Calculate stats
         return mapOf(
             "received" to receivedOrders.size,
             "inPreparation" to inPreparationOrders.size,
