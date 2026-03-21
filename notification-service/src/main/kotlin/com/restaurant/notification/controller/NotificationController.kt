@@ -4,7 +4,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 /**
- * Notification Controller - REST API for email notifications.
+ * Notification API endpoints
  */
 @RestController
 @RequestMapping("/api/notifications")

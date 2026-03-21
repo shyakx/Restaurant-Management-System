@@ -7,102 +7,86 @@ import com.restaurant.order.dto.OrderItemResponse
 import com.restaurant.order.entity.Order
 import com.restaurant.order.entity.OrderStatus
 import com.restaurant.order.service.OrderService
+import com.restaurant.order.mapper.OrderMapper
 import jakarta.validation.Valid
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 /**
- * Order Controller - REST API for order management.
+ * Order API endpoints
  */
 @RestController
 @RequestMapping("/api/orders")
 class OrderController(private val orderService: OrderService) {
 
-    // Create new order
     @PostMapping
     fun createOrder(@Valid @RequestBody request: CreateOrderRequest): ResponseEntity<OrderResponse> {
         val order = orderService.createOrder(request)
-        return ResponseEntity.status(HttpStatus.CREATED).body(order.toResponse())
+        return ResponseEntity.status(HttpStatus.CREATED).body(OrderMapper.toResponse(order))
     }
 
-    // Get order by ID
     @GetMapping("/{id}")
     fun getOrderById(@PathVariable id: Long): ResponseEntity<OrderResponse> {
         val order = orderService.getOrderById(id)
-        return ResponseEntity.ok(order.toResponse())
+        return ResponseEntity.ok(OrderMapper.toResponse(order))
     }
 
-    // Get all orders
     @GetMapping
-    fun getAllOrders(): ResponseEntity<List<OrderResponse>> {
-        val orders = orderService.getAllOrders()
-        return ResponseEntity.ok(orders.map { it.toResponse() })
+    fun getAllOrders(
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int
+    ): ResponseEntity<Page<OrderResponse>> {
+        val pageable: Pageable = PageRequest.of(page, size)
+        val orders = orderService.getAllOrders(pageable)
+        val orderResponses = orders.map { OrderMapper.toResponse(it) }
+        return ResponseEntity.ok(orderResponses)
     }
 
-    // Get orders by status
     @GetMapping("/status/{status}")
-    fun getOrdersByStatus(@PathVariable status: OrderStatus): ResponseEntity<List<OrderResponse>> {
-        val orders = orderService.getOrdersByStatus(status)
-        return ResponseEntity.ok(orders.map { it.toResponse() })
+    fun getOrdersByStatus(
+        @PathVariable status: OrderStatus,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int
+    ): ResponseEntity<Page<OrderResponse>> {
+        val pageable: Pageable = PageRequest.of(page, size)
+        val orders = orderService.getOrdersByStatus(status, pageable)
+        val orderResponses = orders.map { OrderMapper.toResponse(it) }
+        return ResponseEntity.ok(orderResponses)
     }
 
-    // Update order status
     @PutMapping("/{id}/status")
     fun updateOrderStatus(
         @PathVariable id: Long,
         @Valid @RequestBody statusRequest: UpdateOrderStatusRequest
     ): ResponseEntity<OrderResponse> {
-        // Parse status with fallback to PENDING for invalid values
         val status = try {
             OrderStatus.valueOf(statusRequest.status.uppercase())
         } catch (e: IllegalArgumentException) {
-            OrderStatus.PENDING
+            throw IllegalArgumentException("Invalid order status: ${statusRequest.status}")
         }
         val order = orderService.updateOrderStatus(id, status)
-        return ResponseEntity.ok(order.toResponse())
+        return ResponseEntity.ok(OrderMapper.toResponse(order))
     }
 
-    // Get customer orders by email
     @GetMapping("/customer/{email}")
-    fun getOrdersByCustomerEmail(@PathVariable email: String): ResponseEntity<List<OrderResponse>> {
-        val orders = orderService.getOrdersByCustomerEmail(email)
-        return ResponseEntity.ok(orders.map { it.toResponse() })
+    fun getOrdersByCustomerEmail(
+        @PathVariable email: String,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int
+    ): ResponseEntity<Page<OrderResponse>> {
+        val pageable: Pageable = PageRequest.of(page, size)
+        val orders = orderService.getOrdersByCustomerEmail(email, pageable)
+        val orderResponses = orders.map { OrderMapper.toResponse(it) }
+        return ResponseEntity.ok(orderResponses)
     }
 
-    // Get order statistics
     @GetMapping("/statistics")
     fun getOrderStatistics(): ResponseEntity<Map<String, Long>> {
         val statistics = orderService.getOrderStatistics()
         return ResponseEntity.ok(statistics)
     }
-}
-
-// Extension functions for entity-to-DTO mapping
-
-// Convert Order entity to OrderResponse DTO
-fun Order.toResponse(): OrderResponse {
-    return OrderResponse(
-        id = this.id!!,
-        customerName = this.customerName,
-        customerEmail = this.customerEmail,
-        customerPhone = this.customerPhone,
-        status = this.status.name,
-        totalAmount = this.totalAmount,
-        items = this.items.map { it.toResponse() },
-        createdAt = this.createdAt,
-        updatedAt = this.updatedAt
-    )
-}
-
-// Convert OrderItem entity to OrderItemResponse DTO
-fun com.restaurant.order.entity.OrderItem.toResponse(): OrderItemResponse {
-    return OrderItemResponse(
-        id = this.id!!,
-        menuItemId = this.menuItemId,
-        menuItemName = this.menuItemName,
-        quantity = this.quantity,
-        unitPrice = this.unitPrice,
-        totalPrice = this.totalPrice
-    )
 }

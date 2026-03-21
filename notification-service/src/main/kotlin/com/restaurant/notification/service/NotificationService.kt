@@ -61,7 +61,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
         """.trimIndent())
 
         sendEmail(orderEvent.customerEmail, subject, message)
-        println("✅ [NOTIFICATION] Order confirmation sent to ${orderEvent.customerEmail} for order #${orderEvent.orderId}")
+        println("Order confirmation sent to ${orderEvent.customerEmail} for order #${orderEvent.orderId}")
     }
 
     // Send order confirmed notification
@@ -114,7 +114,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
             Order ID: #${orderEvent.orderId}
             Ready Time: ${orderEvent.timestamp}
             
-            Please visit us to collect your order.
+            Visit us to collect your order.
             
             Best regards,
             Restaurant Team
@@ -134,7 +134,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
             Order ID: #${orderEvent.orderId}
             Total Amount: $${orderEvent.totalAmount}
             
-            We hope you enjoyed your meal. Please visit us again soon!
+            Hope you enjoyed your meal. Visit us again soon!
             
             Best regards,
             Restaurant Team
@@ -153,7 +153,7 @@ class NotificationService(private val mailSender: JavaMailSender) {
             
             Order ID: #${orderEvent.orderId}
             
-            If you did not request this cancellation, please contact us immediately.
+            If you didn't request this cancellation, contact us immediately.
             
             Best regards,
             Restaurant Team

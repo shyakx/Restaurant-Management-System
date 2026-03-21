@@ -43,15 +43,14 @@ A modern microservices restaurant management system built with Spring Boot, feat
 - **Kafka** (port 9092) - Event-driven communication between services
 - **Zookeeper** (port 2181) - Kafka coordination service
 
-## Technology Stack
+## Tech Stack
 
-- **Backend**: Spring Boot 3.2.0 with Kotlin
-- **Microservices**: Spring Cloud Gateway, Eureka, Circuit Breaker
-- **Database**: PostgreSQL 15 with Hibernate/JPA
-- **Caching**: Redis 7 with Spring Data Redis
-- **Messaging**: Apache Kafka 7.5
-- **Containerization**: Docker with Docker Compose
-- **Java Runtime**: OpenJDK 17
+- **Backend**: Spring Boot 3.2.0 + Kotlin
+- **Database**: PostgreSQL 15
+- **Cache**: Redis 7
+- **Messaging**: Kafka 7.5
+- **Container**: Docker + Docker Compose
+- **Java**: OpenJDK 17
 
 ## Quick Start
 
@@ -127,63 +126,32 @@ curl http://localhost:8081/actuator/health
 curl http://localhost:8082/actuator/health
 ```
 
-## API Documentation
+## API Endpoints
 
-### Access Points
+**Main Access Points:**
+- API Gateway: http://localhost:8081
+- Eureka Dashboard: http://localhost:8761
+- Kafka UI: http://localhost:8090
 
-- **API Gateway**: http://localhost:8081 (main entry point)
-- **Eureka Dashboard**: http://localhost:8761 (service registry)
-- **Kafka UI**: http://localhost:8090 (Kafka monitoring)
-- **Order Service**: http://localhost:8082 (direct access)
-- **Kitchen Service**: http://localhost:8083 (direct access)
-- **Notification Service**: http://localhost:8084 (direct access)
+**Order API:**
+- `POST /api/orders` - Create order
+- `GET /api/orders` - List orders (paginated)
+- `GET /api/orders/{id}` - Get order by ID
+- `PUT /api/orders/{id}/status` - Update order status
 
-### Order Management Flow
+**Kitchen API:**
+- `GET /api/kitchen/orders` - List kitchen orders
+- `PUT /api/kitchen/orders/{id}/start-preparation` - Start prep
+- `PUT /api/kitchen/orders/{id}/ready` - Mark as ready
+- `PUT /api/kitchen/orders/{id}/complete` - Complete order
 
-1. **Create Order** - POST `/api/orders`
-   ```json
-   {
-     "customerName": "John Doe",
-     "customerEmail": "john@example.com", 
-     "customerPhone": "+1234567890",
-     "items": [
-       {"menuItemId": 1, "quantity": 2},
-       {"menuItemId": 2, "quantity": 1}
-     ]
-   }
-   ```
-
-2. **Email Notifications** - Automatic emails sent to customer
-   - **Order Confirmation** - Immediate after order creation
-   - **Order Preparing** - When kitchen starts preparation (1 min)
-   - **Order Ready** - When food is ready for pickup (3 min)
-   - **Order Completed** - When order is fulfilled
-
-3. **View Orders** - GET `/api/orders`
-   - Get all orders: `GET /api/orders`
-   - Get by ID: `GET /api/orders/{id}`
-   - Get by status: `GET /api/orders/status/{status}`
-
-4. **Kitchen Operations** - Via `/api/kitchen/*`
-   - Start preparation: `PUT /api/kitchen/orders/{id}/start-preparation`
-   - Mark ready: `PUT /api/kitchen/orders/{id}/ready`
-   - Complete order: `PUT /api/kitchen/orders/{id}/complete`
-
-### Order Status Flow
-
-```
-PENDING → CONFIRMED → PREPARING → READY → COMPLETED
-    ↓           ↓           ↓        ↓         ↓
-  Created    Accepted    Kitchen   Ready for   Order
-            by Order    Started    Pickup     Delivered
-            Service
-```
+**Order Flow:** `PENDING → CONFIRMED → PREPARING → READY → COMPLETED`
 
 ## Testing
 
 ### Postman Collection
 
-Import the provided Postman collection for comprehensive API testing:
+Import the provided Postman collection for API testing:
 
 ```bash
 # Import this file into Postman
@@ -246,84 +214,27 @@ CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD=50
 - **local-dev** - Development with local infrastructure
 - **docker** - Production-ready containerized deployment
 
-## Monitoring & Health
+## Monitoring
 
-### Kafka Monitoring
+**Health Checks:**
+- All services: `/actuator/health`
+- Eureka Dashboard: http://localhost:8761
+- Kafka UI: http://localhost:8090
 
-Access the Kafka UI at http://localhost:8090 for:
-
-- **Topic Management**: View all Kafka topics and their partitions
-- **Message Browsing**: Browse messages in real-time (no password required)
-- **Consumer Groups**: Monitor consumer lag and offsets
-- **Broker Status**: Check Kafka cluster health
-- **Producer/Consumer Metrics**: Performance monitoring
-
-**Note**: Uses Kafdrop - a simple, password-free Kafka monitoring tool
-
-### Email Notifications
-
-**📧 Real-time email notifications** configured for:
-- **Order Confirmation** - Immediate after order creation
-- **Order Preparing** - When kitchen starts preparation (1 min)
-- **Order Ready** - When food is ready for pickup (3 min)
-- **Order Completed** - When order is fulfilled
-- **Order Cancelled** - If order is cancelled
-
-**Email Account**: `shyakasteven2023@gmail.com`  
-**SMTP**: Gmail with TLS/STARTTLS  
-**Templates**: Professional restaurant branding
-
-### Health Endpoints
-
-All services expose Spring Boot Actuator endpoints:
-
-- `/actuator/health` - Service health status
-- `/actuator/info` - Service information
-- `/actuator/metrics` - Performance metrics
-
-### Service Registry
-
-Monitor registered services via Eureka:
-- **Dashboard**: http://localhost:8761
-- **Registered Services**: Should show all 4 microservices
+**Email Notifications:**
+Automatic emails sent for order status changes (confirmation, preparing, ready, completed).
 
 ## Troubleshooting
 
-### Common Issues
+**Common Issues:**
+- **Services won't start**: Check port availability with `netstat -an | grep :808`
+- **Database errors**: Check PostgreSQL logs: `docker-compose -f docker-compose.env.yml logs postgres`
+- **Service discovery**: Verify Eureka: `curl http://localhost:8761/eureka/apps`
 
-**Services won't start:**
-```bash
-# Check if ports are available
-netstat -an | grep :808
-
-# Check Docker logs
-docker-compose -f docker-compose.env.yml logs [service-name]
-```
-
-**Database connection errors:**
-```bash
-# Verify PostgreSQL is running
-docker-compose -f docker-compose.env.yml logs postgres
-
-# Check database credentials in .env
-cat .env | grep POSTGRES
-```
-
-**Service discovery issues:**
-```bash
-# Verify Eureka is accessible
-curl http://localhost:8761/eureka/apps
-
-# Check service registration
-curl http://localhost:8761/eureka/instances
-```
-
-### Performance Optimization
-
-- **Database**: Use connection pooling (configured in .env)
-- **Caching**: Redis automatically caches frequently accessed data
-- **Circuit Breaker**: Prevents cascading failures
-- **Load Balancing**: API Gateway distributes requests
+**Performance:**
+- Database pooling configured in `.env`
+- Redis caching enabled
+- Circuit breaker prevents cascading failures
 
 ## Development
 

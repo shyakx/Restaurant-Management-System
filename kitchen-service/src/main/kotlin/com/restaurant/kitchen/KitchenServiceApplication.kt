@@ -17,7 +17,6 @@ import java.io.File
 class KitchenServiceApplication
 
 fun main(args: Array<String>) {
-    // Load environment variables from project root
     val currentDir = System.getProperty("user.dir")
     val projectRoot = File(currentDir).parentFile.absolutePath
     
@@ -26,7 +25,6 @@ fun main(args: Array<String>) {
         .ignoreIfMissing()
         .load()
     
-    // Set environment variables
     dotenv.entries().forEach { entry ->
         System.setProperty(entry.key, entry.value)
     }

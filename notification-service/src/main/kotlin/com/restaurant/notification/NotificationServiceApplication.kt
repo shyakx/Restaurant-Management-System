@@ -13,12 +13,9 @@ import java.io.File
 class NotificationServiceApplication
 
 fun main(args: Array<String>) {
-    // In Docker, environment variables are already set by docker-compose
-    // Only load .env if running locally (not in Docker)
     val inDocker = System.getenv("IN_DOCKER") == "true"
     
     if (!inDocker) {
-        // Load environment variables from project root for local development
         val currentDir = System.getProperty("user.dir")
         val projectRoot = File(currentDir).parentFile.absolutePath
         
@@ -27,12 +24,11 @@ fun main(args: Array<String>) {
             .ignoreIfMissing()
             .load()
         
-        // Set environment variables
         dotenv.entries().forEach { entry ->
             System.setProperty(entry.key, entry.value)
         }
     } else {
-        println("Environment: Using Docker environment variables")
+        println("Using Docker environment variables")
     }
     
     runApplication<NotificationServiceApplication>(*args)
