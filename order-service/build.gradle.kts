@@ -35,6 +35,8 @@ dependencies {
     
     // Database
     implementation("org.postgresql:postgresql")
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
     
     // Jackson Kotlin Module
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")

@@ -1,0 +1,255 @@
+{
+	"info": {
+		"name": "Restaurant API Tests",
+		"description": "API tests for Restaurant Management System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Checks",
+			"item": [
+				{
+					"name": "API Gateway",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/actuator/health"
+					}
+				},
+				{
+					"name": "Order Service",
+					"request": {
+						"method": "GET",
+						"url": "{{order_service_url}}/actuator/health"
+					}
+				},
+				{
+					"name": "Kitchen Service",
+					"request": {
+						"method": "GET",
+						"url": "{{kitchen_service_url}}/actuator/health"
+					}
+				}
+			]
+		},
+		{
+			"name": "Menu API",
+			"item": [
+				{
+					"name": "Get All Menu Items",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 && pm.response.json().content.length > 0) {",
+									"    pm.collectionVariables.set('menu_item_id', pm.response.json().content[0].id);",
+									"    console.log('Found menu item ID: ' + pm.response.json().content[0].id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/menu/items"
+					}
+				},
+				{
+					"name": "Get Menu Item by ID",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/menu/items/{{menu_item_id}}"
+					}
+				},
+				{
+					"name": "Search Menu Items",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/menu/items/search?name=Burger"
+					}
+				},
+				{
+					"name": "Get Menu by Category",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/menu/items/category/Burgers"
+					}
+				}
+			]
+		},
+		{
+			"name": "Order API",
+			"item": [
+				{
+					"name": "Create Order",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('order_id', pm.response.json().id);",
+									"    console.log('Created order ID: ' + pm.response.json().id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customerName\": \"John Doe\",\n  \"customerEmail\": \"john@example.com\",\n  \"customerPhone\": \"+1234567890\",\n  \"items\": [\n    {\n      \"menuItemId\": {{menu_item_id}},\n      \"quantity\": 2\n    }\n  ]\n}"
+						},
+						"url": "{{base_url}}/api/orders"
+					}
+				},
+				{
+					"name": "Get All Orders",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/orders"
+					}
+				},
+				{
+					"name": "Get Order by ID",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/orders/{{order_id}}"
+					}
+				},
+				{
+					"name": "Get Orders by Status",
+					"request": {
+						"method": "GET",
+						"url": "{{base_url}}/api/orders/status/PENDING"
+					}
+				}
+			]
+		},
+		{
+			"name": "Kitchen API",
+			"item": [
+				{
+					"name": "Get Kitchen Orders",
+					"request": {
+						"method": "GET",
+						"url": "{{kitchen_service_url}}/api/kitchen/orders"
+					}
+				},
+				{
+					"name": "Start Preparation",
+					"request": {
+						"method": "PUT",
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/{{order_id}}/start-preparation"
+					}
+				},
+				{
+					"name": "Mark as Ready",
+					"request": {
+						"method": "PUT",
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/{{order_id}}/ready"
+					}
+				},
+				{
+					"name": "Complete Order",
+					"request": {
+						"method": "PUT",
+						"url": "{{kitchen_service_url}}/api/kitchen/orders/{{order_id}}/complete"
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin Menu Management",
+			"item": [
+				{
+					"name": "Create Menu Item",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    pm.collectionVariables.set('admin_menu_id', pm.response.json().id);",
+									"    console.log('Created admin menu ID: ' + pm.response.json().id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Test Burger\",\n  \"description\": \"Test burger for demo\",\n  \"price\": 12.99,\n  \"category\": \"Burgers\",\n  \"available\": true\n}"
+						},
+						"url": "{{base_url}}/api/admin/menu/items"
+					}
+				},
+				{
+					"name": "Update Menu Item",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"price\": 14.99,\n  \"description\": \"Updated test burger\"\n}"
+						},
+						"url": "{{base_url}}/api/admin/menu/items/{{admin_menu_id}}"
+					}
+				},
+				{
+					"name": "Toggle Availability",
+					"request": {
+						"method": "PATCH",
+						"url": "{{base_url}}/api/admin/menu/items/{{admin_menu_id}}/availability?available=false"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8081"
+		},
+		{
+			"key": "order_service_url",
+			"value": "http://localhost:8082"
+		},
+		{
+			"key": "kitchen_service_url",
+			"value": "http://localhost:8083"
+		},
+		{
+			"key": "menu_item_id",
+			"value": ""
+		},
+		{
+			"key": "order_id",
+			"value": ""
+		},
+		{
+			"key": "admin_menu_id",
+			"value": ""
+		}
+	]
+}

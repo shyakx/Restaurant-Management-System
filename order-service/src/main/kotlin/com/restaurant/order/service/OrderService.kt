@@ -1,6 +1,6 @@
 package com.restaurant.order.service
 
-import com.restaurant.order.controller.MenuController
+import com.restaurant.order.service.MenuService
 import com.restaurant.order.dto.*
 import com.restaurant.order.entity.*
 import com.restaurant.order.repository.OrderRepository
@@ -19,11 +19,9 @@ import java.math.BigDecimal
 @Transactional
 class OrderService(
     private val orderRepository: OrderRepository,
-    private val kafkaTemplate: KafkaTemplate<String, Any>
+    private val kafkaTemplate: KafkaTemplate<String, Any>,
+    private val menuService: MenuService
 ) {
-
-    @Autowired
-    private lateinit var menuController: MenuController
 
     companion object {
         const val ORDER_TOPIC = "order-events"
@@ -34,7 +32,7 @@ class OrderService(
     fun createOrder(request: CreateOrderRequest): Order {
         // Validate all menu items before creating order
         request.items.forEach { itemRequest ->
-            if (!menuController.validateMenuItemExists(itemRequest.menuItemId)) {
+            if (!menuService.validateMenuItemExists(itemRequest.menuItemId)) {
                 throw IllegalArgumentException("Menu item with ID ${itemRequest.menuItemId} is not available")
             }
         }
@@ -50,13 +48,16 @@ class OrderService(
 
         // Create order items with validated pricing
         val orderItems = request.items.map { itemRequest ->
-            val menuItemPrice = menuController.getMenuItemPrice(itemRequest.menuItemId)
+            val menuItemPrice = menuService.getMenuItemPrice(itemRequest.menuItemId)
                 ?: throw IllegalArgumentException("Price not available for menu item ${itemRequest.menuItemId}")
+            
+            val menuItemName = menuService.getMenuItemName(itemRequest.menuItemId)
+                ?: throw IllegalArgumentException("Menu item name not found for ID ${itemRequest.menuItemId}")
             
             OrderItem(
                 order = order,
                 menuItemId = itemRequest.menuItemId,
-                menuItemName = "Menu Item ${itemRequest.menuItemId}",
+                menuItemName = menuItemName,
                 quantity = itemRequest.quantity,
                 unitPrice = menuItemPrice,
                 totalPrice = menuItemPrice * itemRequest.quantity.toBigDecimal()

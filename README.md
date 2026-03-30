@@ -1,6 +1,6 @@
 # Restaurant Management System
 
-A modern microservices restaurant management system built with Spring Boot, featuring service discovery, event-driven architecture, and containerized deployment.
+A microservices restaurant management system built with Spring Boot, featuring service discovery, event-driven architecture, and containerized deployment.
 
 ## Architecture Overview
 
@@ -160,7 +160,7 @@ Restaurant-Management-API.postman_collection.json
 
 The collection includes:
 - Health checks for all services
-- Complete order workflow
+- Order workflow testing
 - Error scenario testing
 - Automated test scripts
 
@@ -222,7 +222,7 @@ CIRCUIT_BREAKER_FAILURE_RATE_THRESHOLD=50
 - Kafka UI: http://localhost:8090
 
 **Email Notifications:**
-Automatic emails sent for order status changes (confirmation, preparing, ready, completed).
+Emails sent for order status changes (confirmation, preparing, ready, completed).
 
 ## Troubleshooting
 

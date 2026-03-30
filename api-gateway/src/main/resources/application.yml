@@ -6,23 +6,20 @@ spring:
   cloud:
     gateway:
       routes:
-        # Route kitchen operations FIRST (higher priority)
         - id: kitchen-service
           uri: http://kitchen-service:8083
           predicates:
-            - Path=/api/kitchen/**,/api/orders/status/**
+            - Path=/api/kitchen/**
           filters:
             - Retry=3
         
-        # Route all order-related requests to order service SECOND (lower priority)
         - id: order-service
           uri: http://order-service:8082
           predicates:
-            - Path=/api/orders/**,/api/cart/**,/api/menu/**
+            - Path=/api/orders/**,/api/menu/**
           filters:
             - Retry=3
         
-        # Send notification requests to notification service
         - id: notification-service
           uri: http://notification-service:8084
           predicates:
@@ -30,7 +27,6 @@ spring:
           filters:
             - Retry=3
       
-      # Global CORS configuration
       globalcors:
         cors-configurations:
           '[/**]':
